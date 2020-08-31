@@ -1,4 +1,4 @@
-update=Tue 25 Feb 2020 08:44:25 PM CST
+update=Tue 01 Sep 2020 04:58:39 PM CDT
 version=1
 last_client=kicad
 [general]
@@ -26,7 +26,7 @@ ERC_TestSimilarLabels=1
 version=1
 PageLayoutDescrFile=
 LastNetListRead=pcb.net
-CopperLayerCount=2
+CopperLayerCount=4
 BoardThickness=1.6
 AllowMicroVias=0
 AllowBlindVias=0
@@ -39,6 +39,10 @@ MinMicroViaDiameter=0
 MinMicroViaDrill=0
 MinHoleToHole=0.25
 TrackWidth1=0.254
+TrackWidth2=0.24892
+TrackWidth3=0.39878
+TrackWidth4=0.635
+TrackWidth5=1.27
 ViaDiameter1=0.6858
 ViaDrill1=0.3302
 dPairWidth1=0.2
@@ -74,12 +78,12 @@ Type=0
 Enabled=1
 [pcbnew/Layer.In1.Cu]
 Name=In1.Cu
-Type=0
-Enabled=0
+Type=1
+Enabled=1
 [pcbnew/Layer.In2.Cu]
 Name=In2.Cu
-Type=0
-Enabled=0
+Type=1
+Enabled=1
 [pcbnew/Layer.In3.Cu]
 Name=In3.Cu
 Type=0
