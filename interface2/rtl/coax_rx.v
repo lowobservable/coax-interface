@@ -16,39 +16,37 @@
 
 module coax_rx (
     input clk,
-    input rx,
     input reset,
+    input rx,
     output reg active,
     output reg error,
     output reg [9:0] data,
-    output reg data_available = 0,
-    input read
+    output reg strobe = 0
 );
     parameter CLOCKS_PER_BIT = 8;
 
-    localparam LOSS_OF_MID_BIT_TRANSITION_ERROR = 10'b0000000001;
-    localparam PARITY_ERROR = 10'b0000000010;
-    localparam INVALID_END_SEQUENCE_ERROR = 10'b0000000100;
-    localparam OVERFLOW_ERROR = 10'b0000001000;
+    localparam ERROR_LOSS_OF_MID_BIT_TRANSITION = 10'b0000000001;
+    localparam ERROR_PARITY = 10'b0000000010;
+    localparam ERROR_INVALID_END_SEQUENCE = 10'b0000000100;
 
-    localparam IDLE = 0;
-    localparam START_SEQUENCE_1 = 1;
-    localparam START_SEQUENCE_2 = 2;
-    localparam START_SEQUENCE_3 = 3;
-    localparam START_SEQUENCE_4 = 4;
-    localparam START_SEQUENCE_5 = 5;
-    localparam START_SEQUENCE_6 = 6;
-    localparam START_SEQUENCE_7 = 7;
-    localparam START_SEQUENCE_8 = 8;
-    localparam START_SEQUENCE_9 = 9;
-    localparam SYNC_BIT = 10;
-    localparam DATA_BIT = 11;
-    localparam PARITY_BIT = 12;
-    localparam END_SEQUENCE_1 = 13;
-    localparam END_SEQUENCE_2 = 14;
-    localparam ERROR = 15;
+    localparam STATE_IDLE = 0;
+    localparam STATE_START_SEQUENCE_1 = 1;
+    localparam STATE_START_SEQUENCE_2 = 2;
+    localparam STATE_START_SEQUENCE_3 = 3;
+    localparam STATE_START_SEQUENCE_4 = 4;
+    localparam STATE_START_SEQUENCE_5 = 5;
+    localparam STATE_START_SEQUENCE_6 = 6;
+    localparam STATE_START_SEQUENCE_7 = 7;
+    localparam STATE_START_SEQUENCE_8 = 8;
+    localparam STATE_START_SEQUENCE_9 = 9;
+    localparam STATE_SYNC_BIT = 10;
+    localparam STATE_DATA_BIT = 11;
+    localparam STATE_PARITY_BIT = 12;
+    localparam STATE_END_SEQUENCE_1 = 13;
+    localparam STATE_END_SEQUENCE_2 = 14;
+    localparam STATE_ERROR = 15;
 
-    reg [3:0] state = IDLE;
+    reg [3:0] state = STATE_IDLE;
     reg [3:0] next_state;
     reg [3:0] previous_state;
     reg [7:0] state_counter;
@@ -59,7 +57,7 @@ module coax_rx (
     reg next_bit_timer_reset;
 
     reg [9:0] next_data;
-    reg next_data_available;
+    reg next_strobe;
 
     reg [9:0] input_data;
     reg [9:0] next_input_data;
@@ -68,8 +66,6 @@ module coax_rx (
 
     reg next_active;
     reg next_error;
-
-    reg previous_read;
 
     wire sample;
     wire synchronized;
@@ -91,111 +87,111 @@ module coax_rx (
         next_bit_timer_reset = 0;
 
         next_data = data;
-        next_data_available = data_available;
+        next_strobe = 0;
 
         next_input_data = input_data;
         next_bit_counter = bit_counter;
 
         case (state)
-            IDLE:
+            STATE_IDLE:
             begin
                 next_bit_timer_reset = 1;
 
                 if (!rx && previous_rx)
-                    next_state = START_SEQUENCE_1;
+                    next_state = STATE_START_SEQUENCE_1;
             end
 
-            START_SEQUENCE_1:
+            STATE_START_SEQUENCE_1:
             begin
                 if (sample)
                 begin
                     if (synchronized && rx)
-                        next_state = START_SEQUENCE_2;
+                        next_state = STATE_START_SEQUENCE_2;
                     else
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                 end
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
                 begin
-                    next_state = IDLE;
+                    next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_2:
+            STATE_START_SEQUENCE_2:
             begin
                 if (sample)
                 begin
                     if (synchronized && rx)
-                        next_state = START_SEQUENCE_3;
+                        next_state = STATE_START_SEQUENCE_3;
                     else
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_3:
+            STATE_START_SEQUENCE_3:
             begin
                 if (sample)
                 begin
                     if (synchronized && rx)
-                        next_state = START_SEQUENCE_4;
+                        next_state = STATE_START_SEQUENCE_4;
                     else
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_4:
+            STATE_START_SEQUENCE_4:
             begin
                 if (sample)
                 begin
                     if (synchronized && rx)
-                        next_state = START_SEQUENCE_5;
+                        next_state = STATE_START_SEQUENCE_5;
                     else
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_5:
+            STATE_START_SEQUENCE_5:
             begin
                 if (sample)
                 begin
                     if (synchronized && rx)
-                        next_state = START_SEQUENCE_6;
+                        next_state = STATE_START_SEQUENCE_6;
                     else
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_6:
+            STATE_START_SEQUENCE_6:
             begin
                 if (!rx)
-                    next_state = START_SEQUENCE_7;
+                    next_state = STATE_START_SEQUENCE_7;
                 else if (state_counter >= CLOCKS_PER_BIT)
-                    next_state = IDLE;
+                    next_state = STATE_IDLE;
             end
 
-            START_SEQUENCE_7:
+            STATE_START_SEQUENCE_7:
             begin
                 if (rx)
-                    next_state = START_SEQUENCE_8;
+                    next_state = STATE_START_SEQUENCE_8;
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
-                    next_state = IDLE;
+                    next_state = STATE_IDLE;
             end
 
-            START_SEQUENCE_8:
+            STATE_START_SEQUENCE_8:
             begin
                 if (!rx)
                 begin
                     next_bit_timer_reset = 1;
-                    next_state = START_SEQUENCE_9;
+                    next_state = STATE_START_SEQUENCE_9;
                 end
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
                 begin
-                    next_state = IDLE;
+                    next_state = STATE_IDLE;
                 end
             end
 
-            START_SEQUENCE_9:
+            STATE_START_SEQUENCE_9:
             begin
-                // This is really the first SYNC_BIT but we treat it
+                // This is really the first STATE_SYNC_BIT but we treat it
                 // differently and consider it part of the start
                 // sequence.
 
@@ -204,20 +200,20 @@ module coax_rx (
                     if (rx)
                     begin
                         next_bit_counter = 0;
-                        next_state = DATA_BIT;
+                        next_state = STATE_DATA_BIT;
                     end
                     else
                     begin
-                        next_state = IDLE;
+                        next_state = STATE_IDLE;
                     end
                 end
                 else if (state_counter >= CLOCKS_PER_BIT)
                 begin
-                    next_state = IDLE;
+                    next_state = STATE_IDLE;
                 end
            end
 
-           SYNC_BIT:
+           STATE_SYNC_BIT:
            begin
                if (sample)
                begin
@@ -226,22 +222,22 @@ module coax_rx (
                        if (rx)
                        begin
                            next_bit_counter = 0;
-                           next_state = DATA_BIT;
+                           next_state = STATE_DATA_BIT;
                        end
                        else
                        begin
-                           next_state = END_SEQUENCE_1;
+                           next_state = STATE_END_SEQUENCE_1;
                        end
                    end
                    else
                    begin
-                       next_data = LOSS_OF_MID_BIT_TRANSITION_ERROR;
-                       next_state = ERROR;
+                       next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
+                       next_state = STATE_ERROR;
                    end
                end
            end
 
-           DATA_BIT:
+           STATE_DATA_BIT:
            begin
                if (sample)
                begin
@@ -255,18 +251,18 @@ module coax_rx (
                        end
                        else
                        begin
-                           next_state = PARITY_BIT;
+                           next_state = STATE_PARITY_BIT;
                        end
                    end
                    else
                    begin
-                       next_data = LOSS_OF_MID_BIT_TRANSITION_ERROR;
-                       next_state = ERROR;
+                       next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
+                       next_state = STATE_ERROR;
                    end
                end
            end
 
-           PARITY_BIT:
+           STATE_PARITY_BIT:
            begin
                if (sample)
                begin
@@ -275,59 +271,52 @@ module coax_rx (
                        // Even parity includes the sync bit.
                        if (rx == ^{ 1'b1, input_data })
                        begin
-                           if (!data_available)
-                           begin
-                               next_data_available = 1;
-                               next_data = input_data;
-                               next_state = SYNC_BIT;
-                           end
-                           else
-                           begin
-                               next_data = OVERFLOW_ERROR;
-                               next_state = ERROR;
-                           end
+                           next_strobe = 1;
+                           next_data = input_data;
+                           next_state = STATE_SYNC_BIT;
                        end
                        else
                        begin
-                           next_data = PARITY_ERROR;
-                           next_state = ERROR;
+                           next_data = ERROR_PARITY;
+                           next_state = STATE_ERROR;
                        end
                    end
                    else
                    begin
-                       next_data = LOSS_OF_MID_BIT_TRANSITION_ERROR;
-                       next_state = ERROR;
+                       next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
+                       next_state = STATE_ERROR;
                    end
                end
            end
 
-           END_SEQUENCE_1:
+           STATE_END_SEQUENCE_1:
            begin
                if (rx)
                begin
-                   next_state = END_SEQUENCE_2;
+                   next_state = STATE_END_SEQUENCE_2;
                end
                else if (state_counter >= CLOCKS_PER_BIT)
                begin
-                   next_data = INVALID_END_SEQUENCE_ERROR;
-                   next_state = ERROR;
+                   next_data = ERROR_INVALID_END_SEQUENCE;
+                   next_state = STATE_ERROR;
                end
            end
 
-           END_SEQUENCE_2:
+           STATE_END_SEQUENCE_2:
            begin
+               // TODO: should this go to ERROR on timeout?
                if (!rx)
-                   next_state = IDLE;
+                   next_state = STATE_IDLE;
                else if (state_counter >= (CLOCKS_PER_BIT * 2))
-                   next_state = IDLE;
+                   next_state = STATE_IDLE;
            end
         endcase
     end
 
     always @(*)
     begin
-        next_active = (next_state >= SYNC_BIT && next_state <= PARITY_BIT);
-        next_error = (next_state == ERROR);
+        next_active = (next_state >= STATE_SYNC_BIT && next_state <= STATE_PARITY_BIT);
+        next_error = (next_state == STATE_ERROR);
     end
 
     always @(posedge clk)
@@ -338,7 +327,7 @@ module coax_rx (
         bit_timer_reset <= next_bit_timer_reset;
 
         data <= next_data;
-        data_available <= next_data_available;
+        strobe <= next_strobe;
 
         input_data <= next_input_data;
         bit_counter <= next_bit_counter;
@@ -350,11 +339,11 @@ module coax_rx (
         begin
             bit_timer_reset <= 1;
 
-            state <= IDLE;
+            state <= STATE_IDLE;
             state_counter <= 0;
 
             data <= 10'b0000000000;
-            data_available <= 0;
+            strobe <= 0;
 
             input_data <= 10'b0000000000;
             bit_counter <= 0;
@@ -362,13 +351,8 @@ module coax_rx (
             active <= 0;
             error <= 0;
         end
-        else if (data_available && !read && previous_read)
-        begin
-            data_available <= 0;
-        end
 
         previous_rx <= rx;
         previous_state <= state;
-        previous_read <= read;
     end
 endmodule

@@ -15,7 +15,7 @@ set_io --warn-no-port rx A2 # 1!
 set_io --warn-no-port rx_enable E1 # 9
 set_io --warn-no-port rx_active G2 # 10
 set_io --warn-no-port rx_error H1 # 11
-set_io --warn-no-port rx_data_available J1 # 12
+set_io --warn-no-port rx_empty J1 # 12
 set_io --warn-no-port rx_read H2 # 13
 
 # Shared data bus

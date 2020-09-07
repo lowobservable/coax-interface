@@ -31,7 +31,7 @@ module top (
     input rx_enable,
     output rx_active,
     output rx_error,
-    output rx_data_available,
+    output rx_empty,
     input rx_read,
 
     // Shared data bus
@@ -114,17 +114,18 @@ module top (
 
     wire [9:0] rx_data;
 
-    coax_rx #(
-        .CLOCKS_PER_BIT(16)
+    coax_buffered_rx #(
+        .CLOCKS_PER_BIT(16),
+        .DEPTH(256)
     ) coax_rx (
         .clk(clk_38mhz),
-        .rx(rx_enable ? rx_1 : 0),
         .reset(reset),
+        .rx(rx_enable ? rx_1 : 0),
         .active(rx_active),
         .error(rx_error),
         .data(rx_data),
-        .data_available(rx_data_available),
-        .read(rx_read_1)
+        .read_strobe(rx_read_1),
+        .empty(rx_empty)
     );
 
     assign data = rx_enable ? rx_data : 10'bzzzzzzzzzz;
