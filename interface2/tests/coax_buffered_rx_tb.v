@@ -49,10 +49,14 @@ module coax_buffered_rx_tb;
 
         rx_start_sequence;
 
-        repeat (8)
-        begin
-            rx_word;
-        end
+        rx_word(10'b0000000001, 0);
+        rx_word(10'b0000000010, 0);
+        rx_word(10'b0000000011, 1);
+        rx_word(10'b0000000100, 0);
+        rx_word(10'b0000000101, 1);
+        rx_word(10'b0000000110, 1);
+        rx_word(10'b0000000111, 0);
+        rx_word(10'b0000001000, 0);
 
         rx_end_sequence;
 
@@ -91,10 +95,10 @@ module coax_buffered_rx_tb;
 
         rx_start_sequence;
 
-        repeat (4)
-        begin
-            rx_word;
-        end
+        rx_word(10'b0000000001, 0);
+        rx_word(10'b0000000010, 0);
+        rx_word(10'b0000000011, 1);
+        rx_word(10'b0000000100, 0);
 
         rx_end_sequence;
 
@@ -103,7 +107,7 @@ module coax_buffered_rx_tb;
         `assert_low(dut.error, "error should be LOW");
 
         rx_start_sequence;
-        rx_word;
+        rx_word(10'b0000000101, 1);
         rx_end_sequence;
 
         #8;
@@ -117,7 +121,6 @@ module coax_buffered_rx_tb;
     end
     endtask
 
-
     task test_3;
     begin
         $display("START: test_3");
@@ -130,7 +133,7 @@ module coax_buffered_rx_tb;
 
         repeat (9)
         begin
-            rx_word;
+            rx_word(10'b0000000000, 1);
         end
 
         rx_end_sequence;
@@ -186,20 +189,25 @@ module coax_buffered_rx_tb;
     end
     endtask
 
-    task rx_word;
+    task rx_word (
+        input [9:0] data,
+        input parity
+    );
     begin
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
         rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
-        rx_bit(1); // PARITY_BIT
+
+        rx_bit(data[9]);
+        rx_bit(data[8]);
+        rx_bit(data[7]);
+        rx_bit(data[6]);
+        rx_bit(data[5]);
+        rx_bit(data[4]);
+        rx_bit(data[3]);
+        rx_bit(data[2]);
+        rx_bit(data[1]);
+        rx_bit(data[0]);
+
+        rx_bit(parity);
     end
     endtask
 
