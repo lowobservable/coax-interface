@@ -1,6 +1,7 @@
 `default_nettype none
 
 `include "assert.v"
+`include "mock_tx.v"
 
 module coax_buffered_rx_tb;
     reg clk = 0;
@@ -13,7 +14,12 @@ module coax_buffered_rx_tb;
         end
     end
 
-    reg rx = 0;
+    wire rx;
+
+    mock_tx mock_tx (
+        .tx(rx)
+    );
+
     reg reset = 0;
     reg read_strobe = 0;
 
@@ -47,18 +53,18 @@ module coax_buffered_rx_tb;
 
         #2;
 
-        rx_start_sequence;
+        mock_tx.tx_start_sequence;
 
-        rx_word(10'b0000000001, 0);
-        rx_word(10'b0000000010, 0);
-        rx_word(10'b0000000011, 1);
-        rx_word(10'b0000000100, 0);
-        rx_word(10'b0000000101, 1);
-        rx_word(10'b0000000110, 1);
-        rx_word(10'b0000000111, 0);
-        rx_word(10'b0000001000, 0);
+        mock_tx.tx_word(10'b0000000001, 0);
+        mock_tx.tx_word(10'b0000000010, 0);
+        mock_tx.tx_word(10'b0000000011, 1);
+        mock_tx.tx_word(10'b0000000100, 0);
+        mock_tx.tx_word(10'b0000000101, 1);
+        mock_tx.tx_word(10'b0000000110, 1);
+        mock_tx.tx_word(10'b0000000111, 0);
+        mock_tx.tx_word(10'b0000001000, 0);
 
-        rx_end_sequence;
+        mock_tx.tx_end_sequence;
 
         #8;
 
@@ -93,22 +99,22 @@ module coax_buffered_rx_tb;
 
         #2;
 
-        rx_start_sequence;
+        mock_tx.tx_start_sequence;
 
-        rx_word(10'b0000000001, 0);
-        rx_word(10'b0000000010, 0);
-        rx_word(10'b0000000011, 1);
-        rx_word(10'b0000000100, 0);
+        mock_tx.tx_word(10'b0000000001, 0);
+        mock_tx.tx_word(10'b0000000010, 0);
+        mock_tx.tx_word(10'b0000000011, 1);
+        mock_tx.tx_word(10'b0000000100, 0);
 
-        rx_end_sequence;
+        mock_tx.tx_end_sequence;
 
         #8;
 
         `assert_low(dut.error, "error should be LOW");
 
-        rx_start_sequence;
-        rx_word(10'b0000000101, 1);
-        rx_end_sequence;
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_word(10'b0000000101, 1);
+        mock_tx.tx_end_sequence;
 
         #8;
 
@@ -129,14 +135,14 @@ module coax_buffered_rx_tb;
 
         #2;
 
-        rx_start_sequence;
+        mock_tx.tx_start_sequence;
 
         repeat (9)
         begin
-            rx_word(10'b0000000000, 1);
+            mock_tx.tx_word(10'b0000000000, 1);
         end
 
-        rx_end_sequence;
+        mock_tx.tx_end_sequence;
 
         #8;
 
@@ -157,81 +163,6 @@ module coax_buffered_rx_tb;
         reset = 1;
         #2;
         reset = 0;
-    end
-    endtask
-
-    task rx_bit (
-        input bit
-    );
-    begin
-        rx_bit_custom(bit, 8, 8);
-    end
-    endtask
-
-    task rx_start_sequence;
-    begin
-        rx = 0;
-        #16;
-        rx = 1;
-        #16;
-        rx = 0;
-
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-
-        rx = 0;
-        #24;
-        rx = 1;
-        #24;
-    end
-    endtask
-
-    task rx_word (
-        input [9:0] data,
-        input parity
-    );
-    begin
-        rx_bit(1);
-
-        rx_bit(data[9]);
-        rx_bit(data[8]);
-        rx_bit(data[7]);
-        rx_bit(data[6]);
-        rx_bit(data[5]);
-        rx_bit(data[4]);
-        rx_bit(data[3]);
-        rx_bit(data[2]);
-        rx_bit(data[1]);
-        rx_bit(data[0]);
-
-        rx_bit(parity);
-    end
-    endtask
-
-    task rx_end_sequence;
-    begin
-        rx_bit(0);
-
-        rx = 1;
-        #16;
-        rx = 0;
-    end
-    endtask
-
-    task rx_bit_custom (
-        input bit,
-        input [15:0] first_half_duration,
-        input [15:0] second_half_duration
-    );
-    begin
-        rx = !bit;
-        #first_half_duration;
-        rx = bit;
-        #second_half_duration;
-        rx = 0;
     end
     endtask
 endmodule

@@ -1,6 +1,7 @@
 `default_nettype none
 
 `include "assert.v"
+`include "mock_tx.v"
 
 module coax_rx_tb;
     reg clk = 0;
@@ -13,8 +14,13 @@ module coax_rx_tb;
         end
     end
 
+    wire rx;
+
+    mock_tx mock_tx (
+        .tx(rx)
+    );
+
     reg reset = 0;
-    reg rx = 0;
 
     coax_rx #(
         .CLOCKS_PER_BIT(8)
@@ -71,7 +77,7 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
 
         #64;
 
@@ -87,11 +93,11 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -107,12 +113,12 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
-        rx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -128,13 +134,13 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -150,14 +156,14 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -173,15 +179,15 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -197,25 +203,25 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 1;
+        mock_tx.tx_set(1);
         #16;
-        rx = 0;
+        mock_tx.tx_set(0);
 
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
 
-        rx = 0;
+        mock_tx.tx_set(0);
         #24;
-        rx = 1;
+        mock_tx.tx_set(1);
 
         #64;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx = 0;
+        mock_tx.tx_set(0);
 
         $display("END: test_8");
     end
@@ -227,9 +233,9 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
+        mock_tx.tx_start_sequence;
 
-        rx = 0;
+        mock_tx.tx_set(0);
 
         #64;
 
@@ -245,8 +251,8 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
 
         #64;
 
@@ -271,13 +277,13 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
 
         #64;
 
@@ -302,18 +308,18 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1); // LSB DATA_BIT
 
         #64;
 
@@ -338,19 +344,19 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
-        rx_bit(0); // PARITY_BIT
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1); // LSB DATA_BIT
+        mock_tx.tx_bit(0); // PARITY_BIT
 
         #64;
 
@@ -375,19 +381,19 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
-        rx_bit(1); // PARITY_BIT
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1); // LSB DATA_BIT
+        mock_tx.tx_bit(1); // PARITY_BIT
 
         #64;
 
@@ -412,20 +418,20 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
-        rx_bit(1); // PARITY_BIT
-        rx_bit(0);
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1); // LSB DATA_BIT
+        mock_tx.tx_bit(1); // PARITY_BIT
+        mock_tx.tx_bit(0);
 
         #64;
 
@@ -450,20 +456,20 @@ module coax_rx_tb;
 
         `assert_equal(dut.state, dut.STATE_IDLE, "state should be STATE_IDLE");
 
-        rx_start_sequence;
-        rx_bit(1); // SYNC_BIT
-        rx_bit(0); // MSB DATA_BIT
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(0);
-        rx_bit(0);
-        rx_bit(1);
-        rx_bit(1); // LSB DATA_BIT
-        rx_bit(1); // PARITY_BIT
-        rx_end_sequence;
+        mock_tx.tx_start_sequence;
+        mock_tx.tx_bit(1); // SYNC_BIT
+        mock_tx.tx_bit(0); // MSB DATA_BIT
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(0);
+        mock_tx.tx_bit(1);
+        mock_tx.tx_bit(1); // LSB DATA_BIT
+        mock_tx.tx_bit(1); // PARITY_BIT
+        mock_tx.tx_end_sequence;
 
         #64;
 
@@ -480,59 +486,6 @@ module coax_rx_tb;
         reset = 1;
         #2;
         reset = 0;
-    end
-    endtask
-
-    task rx_bit (
-        input bit
-    );
-    begin
-        rx_bit_custom(bit, 8, 8);
-    end
-    endtask
-
-    task rx_start_sequence;
-    begin
-        rx = 0;
-        #16;
-        rx = 1;
-        #16;
-        rx = 0;
-
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-        rx_bit(1);
-
-        rx = 0;
-        #24;
-        rx = 1;
-        #24;
-    end
-    endtask
-
-    task rx_end_sequence;
-    begin
-        rx_bit(0);
-
-        rx = 1;
-        #16;
-        rx = 0;
-    end
-    endtask
-
-    task rx_bit_custom (
-        input bit,
-        input [15:0] first_half_duration,
-        input [15:0] second_half_duration
-    );
-    begin
-        rx = !bit;
-        #first_half_duration;
-        rx = bit;
-        #second_half_duration;
-        rx = 0;
     end
     endtask
 endmodule
