@@ -1,34 +1,19 @@
 # 16MHz clock
 set_io --warn-no-port clk_16mhz B2
 
-set_io --warn-no-port reset D2 # 6
+# SPI
+set_io --warn-no-port spi_sck G2 # 10
+set_io --warn-no-port spi_cs H1 # 11
+set_io --warn-no-port spi_sdi J1 # 12
+set_io --warn-no-port spi_sdo H2 # 13
 
-# Transmitter
-set_io --warn-no-port tx_active B1 # 3!
-set_io --warn-no-port tx_inverted C2 # 4!
-set_io --warn-no-port tx_delay A1 # 2!
-set_io --warn-no-port tx_load D1 # 7
-set_io --warn-no-port tx_full E2 # 8
+# TX
+#set_io --warn-no-port tx_active B1 # 3!
+#set_io --warn-no-port tx_inverted C2 # 4!
+#set_io --warn-no-port tx_delay A1 # 2!
 
-# Receiver
+# RX
 set_io --warn-no-port rx A2 # 1!
-set_io --warn-no-port rx_enable E1 # 9
-set_io --warn-no-port rx_active G2 # 10
-set_io --warn-no-port rx_error H1 # 11
-set_io --warn-no-port rx_empty J1 # 12
-set_io --warn-no-port rx_read H2 # 13
-
-# Shared data bus
-set_io --warn-no-port data[9] B6 # 23
-set_io --warn-no-port data[8] A7
-set_io --warn-no-port data[7] B7
-set_io --warn-no-port data[6] A8
-set_io --warn-no-port data[5] B8
-set_io --warn-no-port data[4] A9
-set_io --warn-no-port data[3] C9
-set_io --warn-no-port data[2] D8
-set_io --warn-no-port data[1] D9
-set_io --warn-no-port data[0] H9 # 14
 
 set_io --warn-no-port debug A6 # 24
 

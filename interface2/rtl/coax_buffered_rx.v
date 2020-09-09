@@ -81,5 +81,5 @@ module coax_buffered_rx (
     end
 
     assign error = overflow || overflowed || coax_rx_error;
-    assign data = (overflow || overflowed) ? ERROR_OVERFLOW : (coax_rx_error ? coax_rx_data : fifo_data);
+    assign data = (overflow || overflowed) ? ERROR_OVERFLOW : (coax_rx_error ? coax_rx_data : (empty ? 10'b0 : fifo_data));
 endmodule

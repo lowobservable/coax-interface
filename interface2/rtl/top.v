@@ -17,25 +17,16 @@
 module top (
     input clk_16mhz,
 
-    input reset,
+    // SPI
+    input spi_sck,
+    input spi_cs,
+    input spi_sdi,
+    output spi_sdo,
 
-    // Transmitter
-    output tx_active,
-    output tx_delay,
-    output tx_inverted,
-    input tx_load,
-    output tx_full,
+    // TX
 
-    // Receiver
+    // RX
     input rx,
-    input rx_enable,
-    output rx_active,
-    output rx_error,
-    output rx_empty,
-    input rx_read,
-
-    // Shared data bus
-    inout [9:0] data,
 
     output debug,
 
@@ -59,78 +50,77 @@ module top (
         .PLLOUTCORE(clk_38mhz)
     );
 
-    reg tx_load_0 = 0;
-    reg tx_load_1 = 0;
-
     reg rx_0 = 0;
     reg rx_1 = 0;
 
-    reg rx_read_0 = 0;
-    reg rx_read_1 = 0;
-
     always @(posedge clk_38mhz)
     begin
-        tx_load_0 <= tx_load;
-        tx_load_1 <= tx_load_0;
-
         rx_0 <= rx;
         rx_1 <= rx_0;
-
-        rx_read_0 <= rx_read;
-        rx_read_1 <= rx_read_0;
     end
 
-    wire tx_active_undistorted;
-    wire tx_undistorted;
-    wire [9:0] tx_data;
+    wire [7:0] spi_rx_data;
+    wire spi_rx_strobe;
+    wire [7:0] spi_tx_data;
+    wire spi_tx_strobe;
 
-    assign tx_data = data;
-
-    coax_tx #(
-        .CLOCKS_PER_BIT(16)
-    ) coax_tx (
+    spi_device spi (
         .clk(clk_38mhz),
-        .reset(reset),
-        .active(tx_active_undistorted),
-        .tx(tx_undistorted),
-        .data(tx_data),
-        .load(tx_load_1),
-        .full(tx_full)
+        .reset(/* TODO */ 0),
+        .spi_clk(spi_sck),
+        .spi_cs(spi_cs),
+        .spi_mosi(spi_sdi),
+        .spi_miso(spi_sdo),
+        .spi_rx_data(spi_rx_data),
+        .spi_rx_strobe(spi_rx_strobe),
+        .spi_tx_data(spi_tx_data),
+        .spi_tx_strobe(spi_tx_strobe)
     );
 
-    wire tx;
+    /* TODO: TX */
 
-    coax_tx_distorter #(
-        .CLOCKS_PER_BIT(16)
-    ) coax_tx_distorter (
-        .clk(clk_38mhz),
-        .active_input(tx_active_undistorted),
-        .tx_input(tx_undistorted),
-        .active_output(tx_active),
-        .tx_output(tx),
-        .tx_delay(tx_delay),
-        .tx_inverted(tx_inverted)
-    );
-
+    wire rx_reset;
+    wire rx_active;
+    wire rx_error;
     wire [9:0] rx_data;
+    wire rx_read_strobe;
+    wire rx_empty;
 
     coax_buffered_rx #(
         .CLOCKS_PER_BIT(16),
         .DEPTH(256)
     ) coax_rx (
         .clk(clk_38mhz),
-        .reset(reset),
-        .rx(rx_enable ? rx_1 : 0),
+        .reset(rx_reset),
+        .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
         .active(rx_active),
         .error(rx_error),
         .data(rx_data),
-        .read_strobe(rx_read_1),
+        .read_strobe(rx_read_strobe),
         .empty(rx_empty)
     );
 
-    assign data = rx_enable ? rx_data : 10'bzzzzzzzzzz;
+    control control (
+        .clk(clk_38mhz),
+        .reset(/* TODO */ 0),
 
-    assign debug = rx_enable ? rx_1 : tx;
+        .spi_cs(spi_cs),
+        .spi_rx_data(spi_rx_data),
+        .spi_rx_strobe(spi_rx_strobe),
+        .spi_tx_data(spi_tx_data),
+        .spi_tx_strobe(spi_tx_strobe),
+
+        /* TODO: tx... */
+
+        .rx_reset(rx_reset),
+        .rx_active(rx_active),
+        .rx_error(rx_error),
+        .rx_data(rx_data),
+        .rx_read_strobe(rx_read_strobe),
+        .rx_empty(rx_empty)
+    );
+
+    assign debug = rx_active;
 
     assign usb_pu = 0;
 endmodule
