@@ -1,5 +1,8 @@
-# 16MHz clock
+# Clocks
 set_io --warn-no-port clk_16mhz B2
+
+set_frequency clk_16mhz 16
+set_frequency clk_38mhz 38
 
 # SPI
 set_io --warn-no-port spi_sck G2 # 10
