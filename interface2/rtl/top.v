@@ -28,7 +28,7 @@ module top (
     // RX
     input rx,
 
-    output debug,
+    output debug_1,
 
     output usb_pu
 );
@@ -120,7 +120,7 @@ module top (
         .rx_empty(rx_empty)
     );
 
-    assign debug = rx_active;
+    assign debug_1 = rx_active;
 
     assign usb_pu = 0;
 endmodule

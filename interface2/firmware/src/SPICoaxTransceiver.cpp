@@ -3,6 +3,7 @@
 
 #include "SPICoaxTransceiver.h"
 
+#define COMMAND_READ_REGISTER 0x2
 #define COMMAND_RX 0x5
 
 SPISettings spiSettings(4000000, MSBFIRST, SPI_MODE0);
@@ -22,6 +23,23 @@ bool SPICoaxTransceiver::begin()
     return true;
 }
 
+uint8_t SPICoaxTransceiver::readRegister(uint8_t index)
+{
+    SPI.beginTransaction(spiSettings);
+
+    digitalWrite(_chipSelectPin, LOW);
+
+    SPI.transfer(COMMAND_READ_REGISTER | (index << 4));
+
+    uint8_t value = SPI.transfer(0);
+
+    digitalWrite(_chipSelectPin, HIGH);
+
+    SPI.endTransaction();
+
+    return value;
+}
+
 int SPICoaxTransceiver::receive(uint16_t *buffer, size_t bufferSize)
 {
     SPI.beginTransaction(spiSettings);
@@ -37,22 +55,16 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, size_t bufferSize)
         uint8_t msb = SPI.transfer(0);
         uint8_t lsb = SPI.transfer(0);
 
-        // vvv
-        Serial.print(msb, BIN);
-        Serial.print(" _ ");
-        Serial.println(lsb, BIN);
-        // ^^^
+        uint16_t value = (msb << 8) | lsb;
 
-        if (msb & 0x80) {
-            error = ((msb << 8) | lsb) & 0x3ff;
+        if (value & 0x8000) {
+            error = value & 0x3ff;
             break;
-        } else if (msb & 0x40) {
+        } else if (value & 0x4000) {
             break;
         }
 
-        uint16_t word = ((msb << 8) | lsb) & 0x3ff;
-
-        buffer[index] = word;
+        buffer[index] = value & 0x3ff;
 
         index++;
     } while(index < bufferSize);

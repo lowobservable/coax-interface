@@ -36,13 +36,18 @@ module control (
     input rx_empty
 );
     localparam STATE_IDLE = 0;
-    localparam STATE_RX_1 = 1;
-    localparam STATE_RX_2 = 2;
-    localparam STATE_RX_3 = 3;
-    localparam STATE_RX_4 = 4;
+    localparam STATE_READ_REGISTER_1 = 1;
+    localparam STATE_READ_REGISTER_2 = 2;
+    localparam STATE_RX_1 = 3;
+    localparam STATE_RX_2 = 4;
+    localparam STATE_RX_3 = 5;
+    localparam STATE_RX_4 = 6;
 
     reg [7:0] state = STATE_IDLE;
     reg [7:0] next_state;
+
+    reg [7:0] command;
+    reg [7:0] next_command;
 
     reg [7:0] next_spi_tx_data;
     reg next_spi_tx_strobe;
@@ -56,6 +61,8 @@ module control (
     begin
         next_state = state;
 
+        next_command = command;
+
         next_spi_tx_data = spi_tx_data;
         next_spi_tx_strobe = 0;
 
@@ -68,10 +75,32 @@ module control (
             begin
                 if (spi_rx_strobe)
                 begin
+                    next_command = spi_rx_data;
+
                     case (spi_rx_data[3:0])
+                        4'h2: next_state = STATE_READ_REGISTER_1;
                         4'h5: next_state = STATE_RX_1;
                     endcase
                 end
+            end
+
+            STATE_READ_REGISTER_1:
+            begin
+                next_spi_tx_data = 0;
+
+                case (command[7:4])
+                    4'h1: next_spi_tx_data = { 1'b0, rx_error, rx_active, 5'b0 };
+                endcase
+
+                next_spi_tx_strobe = 1;
+
+                next_state = STATE_READ_REGISTER_2;
+            end
+
+            STATE_READ_REGISTER_2:
+            begin
+                if (spi_rx_strobe)
+                    next_state = STATE_READ_REGISTER_1;
             end
 
             STATE_RX_1:
@@ -121,6 +150,8 @@ module control (
     begin
         state <= next_state;
 
+        command <= next_command;
+
         spi_tx_data <= next_spi_tx_data;
         spi_tx_strobe <= next_spi_tx_strobe;
 
@@ -131,6 +162,8 @@ module control (
         if (reset)
         begin
             state <= STATE_IDLE;
+
+            command <= 0;
 
             spi_tx_data <= 0;
             spi_tx_strobe <= 0;

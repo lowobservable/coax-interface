@@ -18,6 +18,6 @@ set_io --warn-no-port spi_sdo H2 # 13
 # RX
 set_io --warn-no-port rx A2 # 1!
 
-set_io --warn-no-port debug A6 # 24
+set_io --warn-no-port debug_1 A6 # 24
 
 set_io --warn-no-port usb_pu A3

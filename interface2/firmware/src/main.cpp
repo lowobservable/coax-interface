@@ -17,8 +17,53 @@
 #include "SPICoaxTransceiver.h"
 
 #define CS_PIN 10
+#define INTERRUPT_PIN 20
 
 SPICoaxTransceiver transceiver(CS_PIN);
+
+// vvv
+#define RX_BUFFER_SIZE 256
+
+uint16_t rx_buffer[RX_BUFFER_SIZE];
+
+void handleInterrupt()
+{
+
+    Serial.print("[");
+
+    int count;
+    uint8_t status;
+
+    do {
+        count = transceiver.receive(rx_buffer, RX_BUFFER_SIZE);
+
+        if (count < 0) {
+            if (count == RX_ERROR_LOSS_OF_MID_BIT_TRANSITION) {
+                Serial.print("LOSS OF MID BIT TRANSITION ERROR");
+            } else if (count == RX_ERROR_PARITY) {
+                Serial.print("PARITY ERROR");
+            } else if (count == RX_ERROR_INVALID_END_SEQUENCE) {
+                Serial.print("INVALID END SEQUENCE ERROR");
+            } else if (count == RX_ERROR_OVERFLOW) {
+                Serial.print("OVERFLOW ERROR");
+            } else {
+                Serial.print("UNKNOWN ERROR");
+            }
+
+            break;
+        } else if (count == 0) {
+            Serial.print(".");
+        } else {
+            Serial.print(count);
+            Serial.print(" ");
+        }
+
+        status = transceiver.readRegister(COAX_REGISTER_STATUS);
+    } while (status & COAX_REGISTER_STATUS_RX_ACTIVE || count == RX_BUFFER_SIZE);
+
+    Serial.println("]");
+}
+// ^^^
 
 void setup()
 {
@@ -31,6 +76,10 @@ void setup()
 
     // Configure the transceiver.
     transceiver.begin();
+
+    pinMode(INTERRUPT_PIN, INPUT);
+
+    attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), handleInterrupt, RISING);
 }
 
 uint16_t buffer[1024];
@@ -40,25 +89,15 @@ void loop()
     if (Serial.available()) {
         char command = Serial.read();
 
-        if (command == '1') {
-            Serial.println("RX");
+        if (command == 's') {
+            Serial.println("READ_REGISTER STATUS");
+            uint8_t value = transceiver.readRegister(COAX_REGISTER_STATUS);
 
-            int count = transceiver.receive(buffer, 1024);
-
-            if (count == RX_ERROR_LOSS_OF_MID_BIT_TRANSITION) {
-                Serial.println("\tLOSS OF MID BIT TRANSITION ERROR");
-            } else if (count == RX_ERROR_PARITY) {
-                Serial.println("\tPARITY ERROR");
-            } else if (count == RX_ERROR_INVALID_END_SEQUENCE) {
-                Serial.println("\tINVALID END SEQUENCE ERROR");
-            } else if (count == RX_ERROR_OVERFLOW) {
-                Serial.println("\tOVERFLOW ERROR");
-            } else if (count == 0) {
-                Serial.println("\tEMPTY");
-            } else {
-                Serial.print("\t");
-                Serial.println(count);
-            }
+            Serial.print("\t");
+            Serial.println(value, HEX);
+        } else if (command == 'x') {
+            Serial.println("X");
+            transceiver.receive(rx_buffer, RX_BUFFER_SIZE);
         }
     }
 }
