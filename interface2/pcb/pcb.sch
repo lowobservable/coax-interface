@@ -1953,30 +1953,19 @@ Wire Wire Line
 Connection ~ 5900 9050
 Wire Wire Line
 	5900 9050 6150 9050
-Text GLabel 4200 5950 2    50   Output ~ 0
+Text GLabel 4300 5050 2    50   Output ~ 0
 STM32_BOOT0
-$Comp
-L power:+3V3 #PWR0129
-U 1 1 60A20C06
-P 4100 5350
-F 0 "#PWR0129" H 4100 5200 50  0001 C CNN
-F 1 "+3V3" H 4115 5523 50  0000 C CNN
-F 2 "" H 4100 5350 50  0001 C CNN
-F 3 "" H 4100 5350 50  0001 C CNN
-	1    4100 5350
-	1    0    0    -1  
-$EndComp
 $Comp
 L Device:R R15
 U 1 1 60A28FAD
-P 4100 5600
-F 0 "R15" H 4170 5646 50  0000 L CNN
-F 1 "10k" H 4170 5555 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" V 4030 5600 50  0001 C CNN
-F 3 "~" H 4100 5600 50  0001 C CNN
-F 4 "Vishay" H 4100 5600 50  0001 C CNN "Manufacturer"
-F 5 "RCS060310K0FKEA" H 4100 5600 50  0001 C CNN "Part"
-	1    4100 5600
+P 4200 5300
+F 0 "R15" H 4270 5346 50  0000 L CNN
+F 1 "10k" H 4270 5255 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" V 4130 5300 50  0001 C CNN
+F 3 "~" H 4200 5300 50  0001 C CNN
+F 4 "Vishay" H 4200 5300 50  0001 C CNN "Manufacturer"
+F 5 "RCS060310K0FKEA" H 4200 5300 50  0001 C CNN "Part"
+	1    4200 5300
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -2015,9 +2004,7 @@ Wire Wire Line
 Wire Wire Line
 	4550 3900 4350 3900
 Wire Wire Line
-	4100 5950 4200 5950
-Wire Wire Line
-	4100 5350 4100 5450
+	4200 5050 4300 5050
 $Comp
 L Mechanical:MountingHole_Pad H1
 U 1 1 60D14EA6
@@ -2207,17 +2194,15 @@ Connection ~ 8850 1100
 $Comp
 L Connector:TestPoint TP3
 U 1 1 5F67A563
-P 4100 5950
-F 0 "TP3" V 4203 6022 50  0000 C CNN
-F 1 "TestPoint" V 4204 6022 50  0001 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 4300 5950 50  0001 C CNN
-F 3 "~" H 4300 5950 50  0001 C CNN
-	1    4100 5950
+P 4200 5050
+F 0 "TP3" V 4303 5122 50  0000 C CNN
+F 1 "TestPoint" V 4304 5122 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 4400 5050 50  0001 C CNN
+F 3 "~" H 4400 5050 50  0001 C CNN
+	1    4200 5050
 	0    -1   -1   0   
 $EndComp
-Connection ~ 4100 5950
-Wire Wire Line
-	4100 5750 4100 5950
+Connection ~ 4200 5050
 $Comp
 L Connector_Generic:Conn_02x01 J4
 U 1 1 5F8A67B8
@@ -2495,4 +2480,19 @@ Text GLabel 2800 8500 0    50   Output ~ 0
 LED_RX
 Text GLabel 2800 8400 0    50   Output ~ 0
 LED_ERROR
+$Comp
+L power:GND #PWR?
+U 1 1 5F63ABD9
+P 4200 5550
+F 0 "#PWR?" H 4200 5300 50  0001 C CNN
+F 1 "GND" H 4205 5377 50  0000 C CNN
+F 2 "" H 4200 5550 50  0001 C CNN
+F 3 "" H 4200 5550 50  0001 C CNN
+	1    4200 5550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4200 5450 4200 5550
+Wire Wire Line
+	4200 5050 4200 5150
 $EndSCHEMATC
