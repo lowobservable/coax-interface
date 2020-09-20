@@ -15,7 +15,7 @@
 `default_nettype none
 
 module top (
-    input clk_16mhz,
+    input clk,
 
     // SPI
     input spi_sck,
@@ -28,32 +28,14 @@ module top (
     // RX
     input rx,
 
+    output debug_0,
     output debug_1,
-
-    output usb_pu
+    output debug_2
 );
-    // 38 MHz
-    //
-    // icepll -i 16 -o 37.738
-    wire clk_38mhz;
-
-    SB_PLL40_CORE #(
-        .FEEDBACK_PATH("SIMPLE"),
-        .DIVR(4'b0000),
-        .DIVF(7'b0100101),
-        .DIVQ(3'b100),
-        .FILTER_RANGE(3'b001)
-    ) clk_38mhz_pll (
-        .RESETB(1'b1),
-        .BYPASS(1'b0),
-        .REFERENCECLK(clk_16mhz),
-        .PLLOUTCORE(clk_38mhz)
-    );
-
     reg rx_0 = 0;
     reg rx_1 = 0;
 
-    always @(posedge clk_38mhz)
+    always @(posedge clk)
     begin
         rx_0 <= rx;
         rx_1 <= rx_0;
@@ -65,7 +47,7 @@ module top (
     wire spi_tx_strobe;
 
     spi_device spi (
-        .clk(clk_38mhz),
+        .clk(clk),
         .reset(/* TODO */ 0),
         .spi_clk(spi_sck),
         .spi_cs(spi_cs),
@@ -79,29 +61,29 @@ module top (
 
     /* TODO: TX */
 
-    wire rx_reset;
-    wire rx_active;
-    wire rx_error;
-    wire [9:0] rx_data;
-    wire rx_read_strobe;
-    wire rx_empty;
+    //wire rx_reset;
+    //wire rx_active;
+    //wire rx_error;
+    //wire [9:0] rx_data;
+    //wire rx_read_strobe;
+    //wire rx_empty;
 
-    coax_buffered_rx #(
-        .CLOCKS_PER_BIT(16),
-        .DEPTH(256)
-    ) coax_rx (
-        .clk(clk_38mhz),
-        .reset(rx_reset),
-        .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
-        .active(rx_active),
-        .error(rx_error),
-        .data(rx_data),
-        .read_strobe(rx_read_strobe),
-        .empty(rx_empty)
-    );
+    //coax_buffered_rx #(
+    //    .CLOCKS_PER_BIT(16),
+    //    .DEPTH(256)
+    //) coax_rx (
+    //    .clk(clk),
+    //    .reset(rx_reset),
+    //    .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
+    //    .active(rx_active),
+    //    .error(rx_error),
+    //    .data(rx_data),
+    //    .read_strobe(rx_read_strobe),
+    //    .empty(rx_empty)
+    //);
 
     control control (
-        .clk(clk_38mhz),
+        .clk(clk),
         .reset(/* TODO */ 0),
 
         .spi_cs(spi_cs),
@@ -112,15 +94,15 @@ module top (
 
         /* TODO: tx... */
 
-        .rx_reset(rx_reset),
-        .rx_active(rx_active),
-        .rx_error(rx_error),
-        .rx_data(rx_data),
-        .rx_read_strobe(rx_read_strobe),
-        .rx_empty(rx_empty)
+//        .rx_reset(rx_reset),
+//        .rx_active(rx_active),
+//        .rx_error(rx_error),
+//        .rx_data(rx_data),
+//        .rx_read_strobe(rx_read_strobe),
+//        .rx_empty(rx_empty)
     );
 
-    assign debug_1 = rx_active;
-
-    assign usb_pu = 0;
+    assign debug_0 = 1;
+    assign debug_1 = 1;
+    assign debug_2 = 1;
 endmodule

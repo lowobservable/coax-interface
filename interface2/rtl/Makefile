@@ -13,7 +13,7 @@ clean:
 	$(YOSYS) -p 'synth_ice40 -top top -json $@' $^
 
 %.asc: %.json pins.pcf
-	$(NEXTPNR) --lp8k --package cm81 --json $< --pcf pins.pcf --asc $@
+	$(NEXTPNR) --up5k --package sg48 --json $< --pcf pins.pcf --asc $@
 
 %.bin: %.asc
 	$(ICEPACK) $< $@

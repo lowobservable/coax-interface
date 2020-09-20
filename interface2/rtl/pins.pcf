@@ -1,23 +1,22 @@
-# Clocks
-set_io --warn-no-port clk_16mhz B2
-
-set_frequency clk_16mhz 16
-set_frequency clk_38mhz 38
+set_io clk 37
+set_frequency clk 38
 
 # SPI
-set_io --warn-no-port spi_sck G2 # 10
-set_io --warn-no-port spi_cs H1 # 11
-set_io --warn-no-port spi_sdi J1 # 12
-set_io --warn-no-port spi_sdo H2 # 13
+set_io spi_sck 15
+set_frequency spi_sck 8
+
+set_io spi_cs 16
+set_io spi_sdi 17
+set_io spi_sdo 14
 
 # TX
-#set_io --warn-no-port tx_active B1 # 3!
-#set_io --warn-no-port tx_inverted C2 # 4!
-#set_io --warn-no-port tx_delay A1 # 2!
+#set_io tx_active 42
+#set_io tx_inverted 43
+#set_io tx_delay 41
 
 # RX
-set_io --warn-no-port rx A2 # 1!
+set_io rx 40
 
-set_io --warn-no-port debug_1 A6 # 24
-
-set_io --warn-no-port usb_pu A3
+set_io debug_0 43
+set_io debug_1 42
+set_io debug_2 41
