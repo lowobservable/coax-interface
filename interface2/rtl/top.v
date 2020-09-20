@@ -24,12 +24,14 @@ module top (
     output spi_sdo,
 
     // TX
+    output tx_active,
 
     // RX
     input rx,
 
+    output irq,
+
     output debug_0,
-    output debug_1,
     output debug_2
 );
     reg rx_0 = 0;
@@ -60,6 +62,7 @@ module top (
     );
 
     /* TODO: TX */
+    assign tx_active = 0;
 
     wire rx_reset;
     wire rx_active;
@@ -102,7 +105,8 @@ module top (
         .rx_empty(rx_empty)
     );
 
-    assign debug_0 = 1;
-    assign debug_1 = 1;
-    assign debug_2 = 1;
+    assign irq = rx_active;
+
+    assign debug_0 = rx_1;
+    assign debug_2 = rx_read_strobe;
 endmodule
