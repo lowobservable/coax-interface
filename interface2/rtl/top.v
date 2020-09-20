@@ -61,26 +61,26 @@ module top (
 
     /* TODO: TX */
 
-    //wire rx_reset;
-    //wire rx_active;
-    //wire rx_error;
-    //wire [9:0] rx_data;
-    //wire rx_read_strobe;
-    //wire rx_empty;
+    wire rx_reset;
+    wire rx_active;
+    wire rx_error;
+    wire [9:0] rx_data;
+    wire rx_read_strobe;
+    wire rx_empty;
 
-    //coax_buffered_rx #(
-    //    .CLOCKS_PER_BIT(16),
-    //    .DEPTH(256)
-    //) coax_rx (
-    //    .clk(clk),
-    //    .reset(rx_reset),
-    //    .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
-    //    .active(rx_active),
-    //    .error(rx_error),
-    //    .data(rx_data),
-    //    .read_strobe(rx_read_strobe),
-    //    .empty(rx_empty)
-    //);
+    coax_buffered_rx #(
+        .CLOCKS_PER_BIT(16),
+        .DEPTH(256)
+    ) coax_rx (
+        .clk(clk),
+        .reset(rx_reset),
+        .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
+        .active(rx_active),
+        .error(rx_error),
+        .data(rx_data),
+        .read_strobe(rx_read_strobe),
+        .empty(rx_empty)
+    );
 
     control control (
         .clk(clk),
@@ -94,12 +94,12 @@ module top (
 
         /* TODO: tx... */
 
-//        .rx_reset(rx_reset),
-//        .rx_active(rx_active),
-//        .rx_error(rx_error),
-//        .rx_data(rx_data),
-//        .rx_read_strobe(rx_read_strobe),
-//        .rx_empty(rx_empty)
+        .rx_reset(rx_reset),
+        .rx_active(rx_active),
+        .rx_error(rx_error),
+        .rx_data(rx_data),
+        .rx_read_strobe(rx_read_strobe),
+        .rx_empty(rx_empty)
     );
 
     assign debug_0 = 1;

@@ -1,5 +1,5 @@
 set_io clk 37
-set_frequency clk 38
+#set_frequency clk 38
 
 # SPI
 set_io spi_sck 15
