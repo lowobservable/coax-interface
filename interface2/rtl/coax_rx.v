@@ -50,6 +50,7 @@ module coax_rx (
     reg [3:0] next_state;
     reg [3:0] previous_state;
     reg [7:0] state_counter;
+    reg [7:0] next_state_counter;
 
     reg previous_rx;
 
@@ -83,6 +84,7 @@ module coax_rx (
     always @(*)
     begin
         next_state = state;
+        next_state_counter = state_counter + 1;
 
         next_bit_timer_reset = 0;
 
@@ -98,7 +100,10 @@ module coax_rx (
                 next_bit_timer_reset = 1;
 
                 if (!rx && previous_rx)
+                begin
                     next_state = STATE_START_SEQUENCE_1;
+                    next_state_counter = 0;
+                end
             end
 
             STATE_START_SEQUENCE_1:
@@ -109,10 +114,13 @@ module coax_rx (
                         next_state = STATE_START_SEQUENCE_2;
                     else
                         next_state = STATE_IDLE;
+
+                    next_state_counter = 0;
                 end
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
                 begin
                     next_state = STATE_IDLE;
+                    next_state_counter = 0;
                 end
             end
 
@@ -124,6 +132,8 @@ module coax_rx (
                         next_state = STATE_START_SEQUENCE_3;
                     else
                         next_state = STATE_IDLE;
+
+                    next_state_counter = 0;
                 end
             end
 
@@ -135,6 +145,8 @@ module coax_rx (
                         next_state = STATE_START_SEQUENCE_4;
                     else
                         next_state = STATE_IDLE;
+
+                    next_state_counter = 0;
                 end
             end
 
@@ -146,6 +158,8 @@ module coax_rx (
                         next_state = STATE_START_SEQUENCE_5;
                     else
                         next_state = STATE_IDLE;
+
+                    next_state_counter = 0;
                 end
             end
 
@@ -157,23 +171,37 @@ module coax_rx (
                         next_state = STATE_START_SEQUENCE_6;
                     else
                         next_state = STATE_IDLE;
+
+                    next_state_counter = 0;
                 end
             end
 
             STATE_START_SEQUENCE_6:
             begin
                 if (!rx)
+                begin
                     next_state = STATE_START_SEQUENCE_7;
+                    next_state_counter = 0;
+                end
                 else if (state_counter >= CLOCKS_PER_BIT)
+                begin
                     next_state = STATE_IDLE;
+                    next_state_counter = 0;
+                end
             end
 
             STATE_START_SEQUENCE_7:
             begin
                 if (rx)
+                begin
                     next_state = STATE_START_SEQUENCE_8;
+                    next_state_counter = 0;
+                end
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
+                begin
                     next_state = STATE_IDLE;
+                    next_state_counter = 0;
+                end
             end
 
             STATE_START_SEQUENCE_8:
@@ -182,10 +210,12 @@ module coax_rx (
                 begin
                     next_bit_timer_reset = 1;
                     next_state = STATE_START_SEQUENCE_9;
+                    next_state_counter = 0;
                 end
                 else if (state_counter >= (CLOCKS_PER_BIT * 2))
                 begin
                     next_state = STATE_IDLE;
+                    next_state_counter = 0;
                 end
             end
 
@@ -206,10 +236,13 @@ module coax_rx (
                     begin
                         next_state = STATE_IDLE;
                     end
+
+                    next_state_counter = 0;
                 end
                 else if (state_counter >= CLOCKS_PER_BIT)
                 begin
                     next_state = STATE_IDLE;
+                    next_state_counter = 0;
                 end
            end
 
@@ -228,11 +261,14 @@ module coax_rx (
                        begin
                            next_state = STATE_END_SEQUENCE_1;
                        end
+
+                       next_state_counter = 0;
                    end
                    else
                    begin
                        next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
                        next_state = STATE_ERROR;
+                       next_state_counter = 0;
                    end
                end
            end
@@ -253,11 +289,14 @@ module coax_rx (
                        begin
                            next_state = STATE_PARITY_BIT;
                        end
+
+                       next_state_counter = 0;
                    end
                    else
                    begin
                        next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
                        next_state = STATE_ERROR;
+                       next_state_counter = 0;
                    end
                end
            end
@@ -280,11 +319,14 @@ module coax_rx (
                            next_data = ERROR_PARITY;
                            next_state = STATE_ERROR;
                        end
+
+                       next_state_counter = 0;
                    end
                    else
                    begin
                        next_data = ERROR_LOSS_OF_MID_BIT_TRANSITION;
                        next_state = STATE_ERROR;
+                       next_state_counter = 0;
                    end
                end
            end
@@ -294,11 +336,13 @@ module coax_rx (
                if (rx)
                begin
                    next_state = STATE_END_SEQUENCE_2;
+                   next_state_counter = 0;
                end
                else if (state_counter >= CLOCKS_PER_BIT)
                begin
                    next_data = ERROR_INVALID_END_SEQUENCE;
                    next_state = STATE_ERROR;
+                   next_state_counter = 0;
                end
            end
 
@@ -306,23 +350,23 @@ module coax_rx (
            begin
                // TODO: should this go to ERROR on timeout?
                if (!rx)
+               begin
                    next_state = STATE_IDLE;
+                   next_state_counter = 0;
+               end
                else if (state_counter >= (CLOCKS_PER_BIT * 2))
+               begin
                    next_state = STATE_IDLE;
+                   next_state_counter = 0;
+               end
            end
         endcase
-    end
-
-    always @(*)
-    begin
-        next_active = (next_state >= STATE_SYNC_BIT && next_state <= STATE_PARITY_BIT);
-        next_error = (next_state == STATE_ERROR);
     end
 
     always @(posedge clk)
     begin
         state <= next_state;
-        state_counter <= (state == next_state) ? state_counter + 1 : 0;
+        state_counter <= next_state_counter;
 
         bit_timer_reset <= next_bit_timer_reset;
 
@@ -332,8 +376,8 @@ module coax_rx (
         input_data <= next_input_data;
         bit_counter <= next_bit_counter;
 
-        active <= next_active;
-        error <= next_error;
+        active <= (state >= STATE_SYNC_BIT && state <= STATE_PARITY_BIT);
+        error <= (state == STATE_ERROR);
 
         if (reset)
         begin
