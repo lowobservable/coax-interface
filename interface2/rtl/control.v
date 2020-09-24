@@ -90,6 +90,7 @@ module control (
 
                 case (command[7:4])
                     4'h1: next_spi_tx_data = { 1'b0, rx_error, rx_active, 5'b0 };
+                    4'hf: next_spi_tx_data = 8'ha5;
                 endcase
 
                 next_spi_tx_strobe = 1;
