@@ -11,13 +11,10 @@ set_io spi_sdo 14
 
 # TX
 set_io tx_active 42
-#set_io tx_inverted 43
-#set_io tx_delay 41
+set_io tx_inverted 43
+set_io tx_delay 41
 
 # RX
 set_io rx 40
 
 set_io irq 13
-
-set_io debug_0 43
-set_io debug_2 41

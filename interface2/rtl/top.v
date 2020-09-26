@@ -25,21 +25,40 @@ module top (
 
     // TX
     output tx_active,
+    output tx_inverted,
+    output tx_delay,
 
     // RX
     input rx,
 
-    output irq,
-
-    output debug_0,
-    output debug_2
+    output irq
 );
+    wire internal_rx;
+
+    SB_IO_OD #(
+        .PIN_TYPE(6'b000001),
+        .NEG_TRIGGER(1'b0)
+    ) rx_io_od (
+        .PACKAGEPIN(rx),
+        .DIN0(internal_rx)
+    );
+
+    wire internal_tx_delay;
+
+    SB_IO_OD #(
+        .PIN_TYPE(6'b011001),
+        .NEG_TRIGGER(1'b0)
+    ) tx_delay_io_od (
+        .PACKAGEPIN(tx_delay),
+        .DOUT0(internal_tx_delay)
+    );
+
     reg rx_0 = 0;
     reg rx_1 = 0;
 
     always @(posedge clk)
     begin
-        rx_0 <= rx;
+        rx_0 <= internal_rx;
         rx_1 <= rx_0;
     end
 
@@ -63,6 +82,8 @@ module top (
 
     /* TODO: TX */
     assign tx_active = 0;
+    assign tx_inverted = 0;
+    assign internal_tx_delay = 0;
 
     wire rx_reset;
     wire rx_active;
@@ -106,7 +127,4 @@ module top (
     );
 
     assign irq = rx_active;
-
-    assign debug_0 = rx_1;
-    assign debug_2 = rx_read_strobe;
 endmodule
