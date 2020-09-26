@@ -7,7 +7,7 @@
 #include <pins.h>
 
 const uint8_t ice40Bitstream[] = {
-#include "bitstream.hex"
+#include "bitstream.inc"
 };
 
 Indicators indicators(LED_STATUS_PIN, LED_TX_PIN, LED_RX_PIN, LED_ERROR_PIN);
@@ -17,52 +17,66 @@ ICE40 ice40(ICE40_CS_PIN, ICE40_SCK_PIN, ICE40_SDI_PIN, ICE40_CRESET_PIN,
 
 SPICoaxTransceiver coax(ICE40_CS_PIN);
 
-void testReadRegister()
-{
-    SerialUSB.println("TEST READ REGISTER");
-
-    uint8_t value = coax.readRegister(COAX_REGISTER_STATUS);
-
-    SerialUSB.print("\tvalue = ");
-    SerialUSB.println(value);
-}
+volatile enum {
+    COAX_INTERRUPT_STATE_IDLE,
+    COAX_INTERRUPT_STATE_RECEIVING,
+    COAX_INTERRUPT_STATE_RECEIVED,
+    COAX_INTERRUPT_STATE_ERROR
+} coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
 
 #define COAX_BUFFER_SIZE 1 + (3696 * 2)
 
-uint16_t coaxBuffer[COAX_BUFFER_SIZE];
-
-volatile bool inTheCoaxInterrupt = false;
-volatile int coaxInterruptResult = 0;
+uint16_t coaxInterruptBuffer[COAX_BUFFER_SIZE];
+volatile size_t coaxInterruptBufferCount = 0;
+volatile int coaxInterruptError = 0;
 
 void handleCoaxInterrupt()
 {
-    if (inTheCoaxInterrupt) {
-        // XXX: okay, is this correct... this isn't the actual overflow sitation
+    if (coaxInterruptState != COAX_INTERRUPT_STATE_IDLE) {
+        // ...
         return;
     }
 
-    inTheCoaxInterrupt = true;
+    coaxInterruptState = COAX_INTERRUPT_STATE_RECEIVING;
 
-    coaxInterruptResult = 1;
+    int error = 0;
 
-    inTheCoaxInterrupt = false;
-}
+    uint16_t *buffer = coaxInterruptBuffer;
+    size_t bufferSize = COAX_BUFFER_SIZE;
+    int bufferCount = 0;
 
-void testReceive()
-{
-    SerialUSB.println("TEST RECEIVE");
+    bool isActive;
+    int count;
 
-    int result = coax.receive(coaxBuffer, COAX_BUFFER_SIZE);
+    do {
+        // Determine if the receiver is active before reading from the FIFO to
+        // avoid a race condition where the FIFO is empty, the receiver is
+        // active but is inactive by the time we check the status.
+        isActive = coax.isActive();
 
-    if (result < 0) {
-        SerialUSB.print("\tERROR ");
-        SerialUSB.println(result);
-    } else if (result == 0) {
-        SerialUSB.println("\tEMPTY");
+        count = coax.receive(buffer, bufferSize);
+
+        if (count < 0) {
+            error = count;
+            break;
+        }
+
+        bufferCount += count;
+
+        buffer += count;
+        bufferSize -= count;
+    } while (isActive || count == (int) bufferSize);
+
+    if (error != 0) {
+        coaxInterruptBufferCount = 0;
+        coaxInterruptError = error;
+
+        coaxInterruptState = COAX_INTERRUPT_STATE_ERROR;
     } else {
-        SerialUSB.print("\t");
-        SerialUSB.print(result);
-        SerialUSB.println(" words");
+        coaxInterruptBufferCount = bufferCount;
+        coaxInterruptError = 0;
+
+        coaxInterruptState = COAX_INTERRUPT_STATE_RECEIVED;
     }
 }
 
@@ -99,26 +113,62 @@ void setup()
     indicators.setStatus(RUNNING);
 }
 
+void handleReceiveData(const uint16_t *buffer, const size_t count)
+{
+    indicators.rx();
+
+    SerialUSB.print("RX ");
+    SerialUSB.print(count);
+    SerialUSB.println(" word(s)");
+}
+
+void handleReceiveError(const int error)
+{
+    indicators.error();
+
+    SerialUSB.print("RX ");
+
+    if (error == -1) {
+        SerialUSB.println("loss of mid-bit transition error");
+    } else if (error == -2) {
+        SerialUSB.println("parity error");
+    } else if (error == -4) {
+        SerialUSB.println("invalid end sequence error");
+    } else if (error == -8) {
+        SerialUSB.println("coax_buffered_rx overflow error");
+    } else {
+        SerialUSB.print("unknown ");
+        SerialUSB.print(error);
+        SerialUSB.println("error");
+    }
+}
+
 void loop()
 {
-    if (coaxInterruptResult != 0) {
-        // XXX: this bit should be as fast as possible...
+    static uint16_t coaxBuffer[COAX_BUFFER_SIZE];
 
-        SerialUSB.println("INTERRUPT");
-        SerialUSB.print("\tresult = ");
-        SerialUSB.println(coaxInterruptResult);
+    if (coaxInterruptState == COAX_INTERRUPT_STATE_RECEIVED) {
+        size_t count = coaxInterruptBufferCount;
 
-        coaxInterruptResult = 0;
+        memcpy(coaxBuffer, coaxInterruptBuffer, count);
 
-        SerialUSB.flush();
-    } else if (SerialUSB.available()) {
+        coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
+
+        handleReceiveData(coaxBuffer, count);
+    }
+
+    if (coaxInterruptState == COAX_INTERRUPT_STATE_ERROR) {
+        int error = coaxInterruptError;
+
+        coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
+
+        handleReceiveError(error);
+    }
+
+    if (SerialUSB.available()) {
         char input = SerialUSB.read();
 
-        if (input == '1') {
-            testReadRegister();
-        } else if (input == '2') {
-            testReceive();
-        }
+        // ...
 
         SerialUSB.flush();
     }
