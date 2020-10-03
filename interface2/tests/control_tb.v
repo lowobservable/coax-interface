@@ -21,7 +21,6 @@ module control_tb;
     reg rx_error = 0;
     reg [9:0] rx_data = 0;
     reg rx_empty = 1;
-    reg rx_full = 0;
 
     control dut (
         .clk(clk),
@@ -32,8 +31,7 @@ module control_tb;
         .rx_active(rx_active),
         .rx_error(rx_error),
         .rx_data(rx_data),
-        .rx_empty(rx_empty),
-        .rx_full(rx_full)
+        .rx_empty(rx_empty)
     );
 
     initial
@@ -54,6 +52,9 @@ module control_tb;
 
         #2;
 
+        rx_data = 10'b1111111111;
+        rx_empty = 0;
+
         spi_cs = 0;
         spi_rx_data = 8'h05; // RX
         spi_rx_strobe = 1;
@@ -62,20 +63,33 @@ module control_tb;
 
         #16;
 
+        spi_rx_data = 8'h00;
         spi_rx_strobe = 1;
         #2;
         spi_rx_strobe = 0;
 
         #16;
 
+        spi_rx_data = 8'h00;
+        spi_rx_strobe = 1;
+        #2;
+        spi_rx_strobe = 0;
+
+        #16;
+
+        rx_data = 10'b0000000000;
+        rx_empty = 1;
+
         repeat (8)
         begin
+            spi_rx_data = 8'h00;
             spi_rx_strobe = 1;
             #2;
             spi_rx_strobe = 0;
 
             #16;
 
+            spi_rx_data = 8'h00;
             spi_rx_strobe = 1;
             #2;
             spi_rx_strobe = 0;
