@@ -94,7 +94,7 @@ module top (
 
     coax_buffered_rx #(
         .CLOCKS_PER_BIT(16),
-        .DEPTH(256)
+        .DEPTH(1024)
     ) coax_rx (
         .clk(clk),
         .reset(rx_reset),
@@ -126,5 +126,5 @@ module top (
         .rx_empty(rx_empty)
     );
 
-    assign irq = rx_active;
+    assign irq = rx_active || rx_error;
 endmodule
