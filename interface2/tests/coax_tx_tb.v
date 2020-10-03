@@ -15,7 +15,7 @@ module coax_tx_tb;
 
     reg reset = 0;
     reg [9:0] data;
-    reg load = 0;
+    reg strobe = 0;
 
     coax_tx #(
         .CLOCKS_PER_BIT(8)
@@ -23,7 +23,7 @@ module coax_tx_tb;
         .clk(clk),
         .reset(reset),
         .data(data),
-        .load(load)
+        .strobe(strobe)
     );
 
     initial
@@ -62,9 +62,9 @@ module coax_tx_tb;
 
         data = 10'b0101110101;
 
-        load = 1;
+        strobe = 1;
         #2;
-        load = 0;
+        strobe = 0;
 
         #400;
 
@@ -82,17 +82,17 @@ module coax_tx_tb;
 
         data = 10'b0101110101;
 
-        load = 1;
+        strobe = 1;
         #2;
-        load = 0;
+        strobe = 0;
 
-        #32;
+        #330;
 
         data = 10'b1010001110;
 
-        load = 1;
+        strobe = 1;
         #2;
-        load = 0;
+        strobe = 0;
 
         #600;
 
