@@ -23,19 +23,23 @@ module coax_buffered_tx (
     input load_strobe,
     input start_strobe,
     output empty,
-    output full
+    output full,
+    output ready
 );
     parameter CLOCKS_PER_BIT = 8;
     parameter DEPTH = 256;
 
     localparam STATE_IDLE = 0;
-    localparam STATE_TRANSMITTING = 1;
+    localparam STATE_TRANSMITTING_1 = 1;
+    localparam STATE_TRANSMITTING_2 = 2;
+    localparam STATE_TRANSMITTING_3 = 3;
 
-    reg state = STATE_IDLE;
-    reg next_state;
+    reg [1:0] state = STATE_IDLE;
+    reg [1:0] next_state;
 
     wire [9:0] coax_tx_data;
-    wire coax_tx_strobe;
+    reg coax_tx_strobe = 0;
+    reg next_coax_tx_strobe;
     wire coax_tx_ready;
 
     coax_tx #(
@@ -68,25 +72,45 @@ module coax_buffered_tx (
         .rst(reset)
     );
 
-    assign coax_tx_strobe = (state == STATE_TRANSMITTING && !empty && coax_tx_ready);
-
     always @(*)
     begin
         next_state = state;
 
-        // FIFO read strobe is delayed 1 clock from TX load.
-        next_fifo_read_strobe = coax_tx_strobe;
+        next_coax_tx_strobe = 0;
+        next_fifo_read_strobe = 0;
 
         case (state)
             STATE_IDLE:
             begin
                 if (start_strobe && !empty)
-                    next_state = STATE_TRANSMITTING;
+                    next_state = STATE_TRANSMITTING_1;
             end
 
-            STATE_TRANSMITTING:
+            STATE_TRANSMITTING_1:
             begin
-                if (empty && !active)
+                if (coax_tx_ready)
+                begin
+                    if (!empty)
+                    begin
+                        next_coax_tx_strobe = 1;
+                        next_state = STATE_TRANSMITTING_2;
+                    end
+                    else
+                    begin
+                        next_state = STATE_TRANSMITTING_3;
+                    end
+                end
+            end
+
+            STATE_TRANSMITTING_2:
+            begin
+                next_fifo_read_strobe = 1;
+                next_state = STATE_TRANSMITTING_1;
+            end
+
+            STATE_TRANSMITTING_3:
+            begin
+                if (!active)
                     next_state = STATE_IDLE;
             end
         endcase
@@ -96,13 +120,17 @@ module coax_buffered_tx (
     begin
         state <= next_state;
 
+        coax_tx_strobe <= next_coax_tx_strobe;
         fifo_read_strobe <= next_fifo_read_strobe;
 
         if (reset)
         begin
             state <= STATE_IDLE;
 
+            coax_tx_strobe <= 0;
             fifo_read_strobe <= 0;
         end
     end
+
+    assign ready = (next_state != STATE_TRANSMITTING_3);
 endmodule

@@ -5,7 +5,9 @@
 #include <SPICoaxTransceiver.h>
 
 #define COAX_COMMAND_READ_REGISTER 0x2
+#define COAX_COMMAND_TX 0x4
 #define COAX_COMMAND_RX 0x5
+#define COAX_COMMAND_RESET 0xff
 
 SPICoaxTransceiver::SPICoaxTransceiver(const int csPin) : _csPin(csPin)
 {
@@ -13,9 +15,6 @@ SPICoaxTransceiver::SPICoaxTransceiver(const int csPin) : _csPin(csPin)
 
 bool SPICoaxTransceiver::begin()
 {
-    pinMode(_csPin, OUTPUT);
-    digitalWrite(_csPin, HIGH);
-
     spiSetup();
 
     uint8_t deviceId = readRegister(COAX_REGISTER_DEVICE_ID);
@@ -24,7 +23,21 @@ bool SPICoaxTransceiver::begin()
         return false;
     }
 
+    reset();
+
     return true;
+}
+
+void SPICoaxTransceiver::reset()
+{
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    uint8_t transmitBuffer[1] = { COAX_COMMAND_RESET };
+    uint8_t receiveBuffer[1];
+
+    spiTransfer(transmitBuffer, receiveBuffer, 1);
+
+    LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
 }
 
 uint8_t SPICoaxTransceiver::readRegister(const uint8_t index)
@@ -49,9 +62,52 @@ uint8_t SPICoaxTransceiver::readRegister(const uint8_t index)
 
 int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCount)
 {
-    // TODO
+    //SPI.beginTransaction(spiSettings);
 
-    return -1;
+    //digitalWrite(_csPin, LOW);
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    uint8_t transmitBuffer[2] = { COAX_COMMAND_TX };
+    uint8_t receiveBuffer[2];
+
+    spiTransfer(transmitBuffer, receiveBuffer, 1);
+
+    size_t count = 0;
+    uint8_t error = 0;
+
+    do {
+        transmitBuffer[0] = (buffer[count] >> 8) | 0x03;
+        transmitBuffer[1] = buffer[count] & 0xff;
+
+        spiTransfer(transmitBuffer, receiveBuffer, 2);
+
+        uint8_t value = receiveBuffer[1];
+
+        if (value == 0) {
+            count++;
+        } else if (value == 0x81) {
+            // Overflow... we'll just try again
+            //continue;
+            // TODO!!!!
+            error = 99;
+            break;
+        } else if (value == 0x82) {
+            // Underflow...
+            error = 1;
+            break;
+        }
+    } while (count < bufferCount);
+
+    //digitalWrite(_csPin, HIGH);
+    LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    //SPI.endTransaction();
+
+    if (error != 0) {
+        return (-1) * error;
+    }
+    
+    return count;
 }
 
 int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
@@ -78,7 +134,7 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
         uint16_t value = (receiveBuffer[0] << 8) | receiveBuffer[1];
 
         if (value & 0x8000) {
-            error = value & 0x3ff;
+            error = value & 0x03ff;
 
             // eek... it can be an "invalid" error
             if (error == 0) {
@@ -96,7 +152,7 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
             break;
         }
 
-        buffer[count] = value & 0x3ff;
+        buffer[count] = value & 0x03ff;
 
         count++;
     } while (count < bufferSize);
@@ -139,6 +195,10 @@ static GPIO_InitTypeDef gpioInit = {
 
 bool SPICoaxTransceiver::spiSetup()
 {
+    // TODO: Move this to STM32 LL...
+    pinMode(_csPin, OUTPUT);
+    digitalWrite(_csPin, HIGH);
+
     __HAL_RCC_SPI1_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
 

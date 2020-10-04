@@ -80,10 +80,38 @@ module top (
         .spi_tx_strobe(spi_tx_strobe)
     );
 
-    /* TODO: TX */
-    assign tx_active = 0;
-    assign tx_inverted = 0;
-    assign internal_tx_delay = 0;
+    wire loopback;
+
+    wire xxx_tx_active;
+    wire xxx_tx;
+
+    wire tx_reset;
+    wire [9:0] tx_data;
+    wire tx_load_strobe;
+    wire tx_start_strobe;
+    wire tx_empty;
+    wire tx_full;
+    wire tx_ready;
+
+    coax_buffered_tx #(
+        .CLOCKS_PER_BIT(16),
+        .DEPTH(2048)
+    ) coax_buffered_tx (
+        .clk(clk),
+        .reset(tx_reset),
+        .active(xxx_tx_active),
+        .tx(xxx_tx),
+        .data(tx_data),
+        .load_strobe(tx_load_strobe),
+        .start_strobe(tx_start_strobe),
+        .empty(tx_empty),
+        .full(tx_full),
+        .ready(tx_ready)
+    );
+
+    assign tx_active = xxx_tx_active;
+    assign tx_inverted = tx_load_strobe;
+    assign internal_tx_delay = tx_start_strobe;
 
     wire rx_reset;
     wire rx_active;
@@ -94,11 +122,11 @@ module top (
 
     coax_buffered_rx #(
         .CLOCKS_PER_BIT(16),
-        .DEPTH(1024)
-    ) coax_rx (
+        .DEPTH(2048)
+    ) coax_buffered_rx (
         .clk(clk),
         .reset(rx_reset),
-        .rx(/* TODO: rx_enable ? (loopback ? tx : rx_1) : 0 */ rx_1),
+        .rx(loopback ? xxx_tx : (!tx_active ? rx_1 : 0)),
         .active(rx_active),
         .error(rx_error),
         .data(rx_data),
@@ -116,7 +144,16 @@ module top (
         .spi_tx_data(spi_tx_data),
         .spi_tx_strobe(spi_tx_strobe),
 
-        /* TODO: tx... */
+        .loopback(loopback),
+
+        .tx_reset(tx_reset),
+        .tx_active(xxx_tx_active),
+        .tx_data(tx_data),
+        .tx_load_strobe(tx_load_strobe),
+        .tx_start_strobe(tx_start_strobe),
+        .tx_empty(tx_empty),
+        .tx_full(tx_full),
+        .tx_ready(tx_ready),
 
         .rx_reset(rx_reset),
         .rx_active(rx_active),

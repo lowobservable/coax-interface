@@ -25,7 +25,17 @@ module control (
     output reg [7:0] spi_tx_data,
     output reg spi_tx_strobe,
 
+    output loopback,
+
     // TX
+    output reg tx_reset,
+    input tx_active,
+    output reg [9:0] tx_data,
+    output reg tx_load_strobe,
+    output reg tx_start_strobe,
+    input tx_empty,
+    input tx_full,
+    input tx_ready,
     
     // RX
     output reg rx_reset,
@@ -38,19 +48,31 @@ module control (
     localparam STATE_IDLE = 0;
     localparam STATE_READ_REGISTER_1 = 1;
     localparam STATE_READ_REGISTER_2 = 2;
-    localparam STATE_RX_1 = 3;
-    localparam STATE_RX_2 = 4;
-    localparam STATE_RX_3 = 5;
-    localparam STATE_RX_4 = 6;
+    localparam STATE_TX_1 = 3;
+    localparam STATE_TX_2 = 4;
+    localparam STATE_RX_1 = 5;
+    localparam STATE_RX_2 = 6;
+    localparam STATE_RX_3 = 7;
+    localparam STATE_RX_4 = 8;
+    localparam STATE_RESET = 9;
 
     reg [7:0] state = STATE_IDLE;
     reg [7:0] next_state;
+
+    reg [7:0] control_register = 8'b00000001;
 
     reg [7:0] command;
     reg [7:0] next_command;
 
     reg [7:0] next_spi_tx_data;
     reg next_spi_tx_strobe;
+
+    reg next_tx_reset;
+    reg [9:0] next_tx_data;
+    reg tx_data_valid = 0;
+    reg next_tx_data_valid;
+    reg next_tx_load_strobe;
+    reg next_tx_start_strobe;
 
     reg next_rx_reset;
     reg next_rx_read_strobe;
@@ -66,6 +88,12 @@ module control (
         next_spi_tx_data = spi_tx_data;
         next_spi_tx_strobe = 0;
 
+        next_tx_reset = 0;
+        next_tx_data = tx_data;
+        next_tx_data_valid = tx_data_valid;
+        next_tx_load_strobe = 0;
+        next_tx_start_strobe = 0;
+
         next_rx_reset = 0;
         next_rx_read_strobe = 0;
         next_rx_buffer = rx_buffer;
@@ -79,7 +107,9 @@ module control (
 
                     case (spi_rx_data[3:0])
                         4'h2: next_state = STATE_READ_REGISTER_1;
+                        4'h4: next_state = STATE_TX_1;
                         4'h5: next_state = STATE_RX_1;
+                        4'hf: next_state = STATE_RESET;
                     endcase
                 end
             end
@@ -89,7 +119,8 @@ module control (
                 next_spi_tx_data = 0;
 
                 case (command[7:4])
-                    4'h1: next_spi_tx_data = { 1'b0, rx_error, rx_active, 5'b0 };
+                    4'h1: next_spi_tx_data = { 1'b0, rx_error, rx_active, 2'b0, tx_active, 2'b0 };
+                    4'h2: next_spi_tx_data = control_register;
                     4'hf: next_spi_tx_data = 8'ha5;
                 endcase
 
@@ -102,6 +133,46 @@ module control (
             begin
                 if (spi_rx_strobe)
                     next_state = STATE_READ_REGISTER_1;
+            end
+
+            STATE_TX_1:
+            begin
+                if (spi_rx_strobe)
+                begin
+                    next_tx_data_valid = 0;
+
+                    if (tx_full)
+                    begin
+                        next_spi_tx_data = 8'b10000001; // Overflow
+                        next_spi_tx_strobe = 1;
+                    end
+                    else if (!tx_ready)
+                    begin
+                        next_spi_tx_data = 8'b10000010; // Underflow
+                        next_spi_tx_strobe = 1;
+                    end
+                    else
+                    begin
+                        next_tx_data = { spi_rx_data[1:0], 8'b00000000 };
+                        next_tx_data_valid = 1;
+
+                        next_spi_tx_data = 8'h00;
+                        next_spi_tx_strobe = 1;
+                    end
+
+                    next_state = STATE_TX_2;
+                end
+            end
+
+            STATE_TX_2:
+            begin
+                if (spi_rx_strobe)
+                begin
+                    next_tx_data = { tx_data[9:8], spi_rx_data };
+                    next_tx_load_strobe = tx_data_valid;
+
+                    next_state = STATE_TX_1;
+                end
             end
 
             STATE_RX_1:
@@ -141,10 +212,23 @@ module control (
                 if (spi_rx_strobe)
                     next_state = STATE_RX_1;
             end
+
+            STATE_RESET:
+            begin
+                next_tx_reset = 1;
+                next_rx_reset = 1;
+
+                next_state = STATE_IDLE;
+            end
         endcase
 
         if (spi_cs)
+        begin
+            if (!tx_empty && !tx_active)
+                next_tx_start_strobe = 1;
+
             next_state = STATE_IDLE;
+        end
     end
 
     always @(posedge clk)
@@ -155,6 +239,12 @@ module control (
 
         spi_tx_data <= next_spi_tx_data;
         spi_tx_strobe <= next_spi_tx_strobe;
+
+        tx_reset <= next_tx_reset;
+        tx_data <= next_tx_data;
+        tx_data_valid <= next_tx_data_valid;
+        tx_load_strobe <= next_tx_load_strobe;
+        tx_start_strobe <= next_tx_start_strobe;
 
         rx_reset <= next_rx_reset;
         rx_read_strobe <= next_rx_read_strobe;
@@ -169,9 +259,16 @@ module control (
             spi_tx_data <= 0;
             spi_tx_strobe <= 0;
 
+            tx_reset <= 0;
+            tx_data <= 0;
+            tx_load_strobe <= 0;
+            tx_start_strobe <= 0;
+
             rx_reset <= 0;
             rx_read_strobe <= 0;
             rx_buffer <= 0;
         end
     end
+
+    assign loopback = control_register[0];
 endmodule

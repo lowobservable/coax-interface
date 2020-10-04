@@ -80,6 +80,63 @@ void handleCoaxInterrupt()
     }
 }
 
+void handleReceiveData(const uint16_t *buffer, const size_t count)
+{
+    indicators.rx();
+
+    SerialUSB.print("RX ");
+    SerialUSB.print(count);
+    SerialUSB.println(" word(s)");
+}
+
+void handleReceiveError(const int error)
+{
+    indicators.error();
+
+    SerialUSB.print("RX ");
+
+    if (error == -1) {
+        SerialUSB.println("loss of mid-bit transition error");
+    } else if (error == -2) {
+        SerialUSB.println("parity error");
+    } else if (error == -4) {
+        SerialUSB.println("invalid end sequence error");
+    } else if (error == -8) {
+        SerialUSB.println("coax_buffered_rx overflow error");
+    } else {
+        SerialUSB.print("unknown ");
+        SerialUSB.print(error);
+        SerialUSB.println("error");
+    }
+}
+
+void testReadRegister()
+{
+    SerialUSB.println();
+
+    SerialUSB.println("REGISTERS");
+
+    SerialUSB.println("  Status");
+
+    uint8_t status = coax.readRegister(COAX_REGISTER_STATUS);
+
+    SerialUSB.print("    RX Error  = ");
+    SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ERROR ? "Y" : "N");
+
+    SerialUSB.print("    RX Active = ");
+    SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ACTIVE ? "Y" : "N");
+
+    SerialUSB.print("    TX Active = ");
+    SerialUSB.println(status & COAX_REGISTER_STATUS_TX_ACTIVE ? "Y" : "N");
+
+    SerialUSB.println("  Control");
+
+    uint8_t control = coax.readRegister(COAX_REGISTER_CONTROL);
+
+    SerialUSB.print("    Loopback  = ");
+    SerialUSB.println(control & COAX_REGISTER_CONTROL_LOOPBACK ? "Y" : "N");
+}
+
 void setup()
 {
     indicators.begin();
@@ -113,36 +170,6 @@ void setup()
     indicators.setStatus(RUNNING);
 }
 
-void handleReceiveData(const uint16_t *buffer, const size_t count)
-{
-    indicators.rx();
-
-    SerialUSB.print("RX ");
-    SerialUSB.print(count);
-    SerialUSB.println(" word(s)");
-}
-
-void handleReceiveError(const int error)
-{
-    indicators.error();
-
-    SerialUSB.print("RX ");
-
-    if (error == -1) {
-        SerialUSB.println("loss of mid-bit transition error");
-    } else if (error == -2) {
-        SerialUSB.println("parity error");
-    } else if (error == -4) {
-        SerialUSB.println("invalid end sequence error");
-    } else if (error == -8) {
-        SerialUSB.println("coax_buffered_rx overflow error");
-    } else {
-        SerialUSB.print("unknown ");
-        SerialUSB.print(error);
-        SerialUSB.println("error");
-    }
-}
-
 void loop()
 {
     static uint16_t coaxBuffer[COAX_BUFFER_SIZE];
@@ -168,7 +195,24 @@ void loop()
     if (SerialUSB.available()) {
         char input = SerialUSB.read();
 
-        // ...
+        if (input == 's') {
+            testReadRegister();
+        } else if (input == 't') {
+            coaxBuffer[0] = 1;
+            coaxBuffer[1] = 2;
+
+            int count = coax.transmit(coaxBuffer, 3000);
+
+            if (count < 0) {
+                SerialUSB.print("TX unknown ");
+                SerialUSB.print(count);
+                SerialUSB.println("error");
+            } else {
+                SerialUSB.print("TX ");
+                SerialUSB.print(count);
+                SerialUSB.println(" word(s)");
+            }
+        }
 
         SerialUSB.flush();
     }
