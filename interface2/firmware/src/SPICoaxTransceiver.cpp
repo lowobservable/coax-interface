@@ -106,7 +106,12 @@ int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCoun
     if (error != 0) {
         return (-1) * error;
     }
-    
+
+    while (!isTXComplete()) {
+        // TODO: timeout
+        delayMicroseconds(5);
+    }
+
     return count;
 }
 

@@ -14,9 +14,35 @@ module control_tb;
     end
 
     reg reset = 0;
+
     reg spi_cs = 1;
     reg [7:0] spi_rx_data;
     reg spi_rx_strobe = 0;
+
+    wire tx_reset;
+    wire tx_active;
+    wire [9:0] tx_data;
+    wire tx_load_strobe;
+    wire tx_start_strobe;
+    wire tx_empty;
+    wire tx_full;
+    wire tx_ready;
+
+    coax_buffered_tx #(
+        .CLOCKS_PER_BIT(8),
+        .DEPTH(8)
+    ) coax_buffered_tx (
+        .clk(clk),
+        .reset(reset),
+        .active(tx_active),
+        .data(tx_data),
+        .load_strobe(tx_load_strobe),
+        .start_strobe(tx_start_strobe),
+        .empty(tx_empty),
+        .full(tx_full),
+        .ready(tx_ready)
+    );
+
     reg rx_active = 0;
     reg rx_error = 0;
     reg [9:0] rx_data = 0;
@@ -25,9 +51,20 @@ module control_tb;
     control dut (
         .clk(clk),
         .reset(reset),
+
         .spi_cs(spi_cs),
         .spi_rx_data(spi_rx_data),
         .spi_rx_strobe(spi_rx_strobe),
+
+        .tx_reset(tx_reset),
+        .tx_active(tx_active),
+        .tx_data(tx_data),
+        .tx_load_strobe(tx_load_strobe),
+        .tx_start_strobe(tx_start_strobe),
+        .tx_empty(tx_empty),
+        .tx_full(tx_full),
+        .tx_ready(tx_ready),
+
         .rx_active(rx_active),
         .rx_error(rx_error),
         .rx_data(rx_data),
@@ -118,7 +155,11 @@ module control_tb;
 
         spi_cs = 1;
 
-        #64;
+        #500;
+
+        dut_reset;
+
+        #20;
 
         $display("END: test_2");
     end

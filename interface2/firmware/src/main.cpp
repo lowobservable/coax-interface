@@ -52,7 +52,7 @@ void handleCoaxInterrupt()
         // Determine if the receiver is active before reading from the FIFO to
         // avoid a race condition where the FIFO is empty, the receiver is
         // active but is inactive by the time we check the status.
-        isActive = coax.isActive();
+        isActive = coax.isRXActive();
 
         count = coax.receive(buffer, bufferSize);
 
@@ -120,20 +120,23 @@ void testReadRegister()
 
     uint8_t status = coax.readRegister(COAX_REGISTER_STATUS);
 
-    SerialUSB.print("    RX Error  = ");
+    SerialUSB.print("    RX Error    = ");
     SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ERROR ? "Y" : "N");
 
-    SerialUSB.print("    RX Active = ");
+    SerialUSB.print("    RX Active   = ");
     SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ACTIVE ? "Y" : "N");
 
-    SerialUSB.print("    TX Active = ");
+    SerialUSB.print("    TX Complete = ");
+    SerialUSB.println(status & COAX_REGISTER_STATUS_TX_COMPLETE ? "Y" : "N");
+
+    SerialUSB.print("    TX Active   = ");
     SerialUSB.println(status & COAX_REGISTER_STATUS_TX_ACTIVE ? "Y" : "N");
 
     SerialUSB.println("  Control");
 
     uint8_t control = coax.readRegister(COAX_REGISTER_CONTROL);
 
-    SerialUSB.print("    Loopback  = ");
+    SerialUSB.print("    Loopback    = ");
     SerialUSB.println(control & COAX_REGISTER_CONTROL_LOOPBACK ? "Y" : "N");
 }
 
@@ -195,13 +198,17 @@ void loop()
     if (SerialUSB.available()) {
         char input = SerialUSB.read();
 
-        if (input == 's') {
+        if (input == 'r') {
+            coax.reset();
+
+            SerialUSB.println("RESET");
+        } else if (input == 's') {
             testReadRegister();
         } else if (input == 't') {
             coaxBuffer[0] = 1;
             coaxBuffer[1] = 2;
 
-            int count = coax.transmit(coaxBuffer, 3000);
+            int count = coax.transmit(coaxBuffer, 2);
 
             if (count < 0) {
                 SerialUSB.print("TX unknown ");

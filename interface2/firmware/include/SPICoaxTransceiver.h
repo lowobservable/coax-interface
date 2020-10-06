@@ -3,6 +3,7 @@
 #define COAX_REGISTER_STATUS 0x1
 #define COAX_REGISTER_STATUS_RX_ERROR 0x40
 #define COAX_REGISTER_STATUS_RX_ACTIVE 0x20
+#define COAX_REGISTER_STATUS_TX_COMPLETE 0x08
 #define COAX_REGISTER_STATUS_TX_ACTIVE 0x04
 
 #define COAX_REGISTER_CONTROL 0x2
@@ -24,7 +25,12 @@ public:
     int transmit(const uint16_t *buffer, const size_t bufferCount);
     int receive(uint16_t *buffer, const size_t bufferSize);
 
-    inline bool isActive()
+    inline bool isTXComplete()
+    {
+        return readRegister(COAX_REGISTER_STATUS) & COAX_REGISTER_STATUS_TX_COMPLETE;
+    }
+
+    inline bool isRXActive()
     {
         return readRegister(COAX_REGISTER_STATUS) & COAX_REGISTER_STATUS_RX_ACTIVE;
     };
