@@ -21,9 +21,12 @@ public:
     void reset();
 
     uint8_t readRegister(const uint8_t index);
+    void writeRegister(const uint8_t index, const uint8_t value, const uint8_t mask);
 
     int transmit(const uint16_t *buffer, const size_t bufferCount);
     int receive(uint16_t *buffer, const size_t bufferSize);
+
+    void setLoopback(bool loopback);
 
     inline bool isTXComplete()
     {

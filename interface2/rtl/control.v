@@ -48,19 +48,24 @@ module control (
     localparam STATE_IDLE = 0;
     localparam STATE_READ_REGISTER_1 = 1;
     localparam STATE_READ_REGISTER_2 = 2;
-    localparam STATE_TX_1 = 3;
-    localparam STATE_TX_2 = 4;
-    localparam STATE_TX_3 = 5;
-    localparam STATE_RX_1 = 6;
-    localparam STATE_RX_2 = 7;
-    localparam STATE_RX_3 = 8;
-    localparam STATE_RX_4 = 9;
-    localparam STATE_RESET = 10;
+    localparam STATE_WRITE_REGISTER_1 = 3;
+    localparam STATE_WRITE_REGISTER_2 = 4;
+    localparam STATE_TX_1 = 5;
+    localparam STATE_TX_2 = 6;
+    localparam STATE_TX_3 = 7;
+    localparam STATE_RX_1 = 8;
+    localparam STATE_RX_2 = 9;
+    localparam STATE_RX_3 = 10;
+    localparam STATE_RX_4 = 11;
+    localparam STATE_RESET = 12;
 
     reg [7:0] state = STATE_IDLE;
     reg [7:0] next_state;
 
-    reg [7:0] control_register = 8'b00000001;
+    reg [7:0] control_register = 8'b00000000;
+    reg [7:0] next_control_register;
+    reg [7:0] register_mask;
+    reg [7:0] next_register_mask;
 
     reg [7:0] command;
     reg [7:0] next_command;
@@ -87,6 +92,9 @@ module control (
     begin
         next_state = state;
 
+        next_control_register = control_register;
+        next_register_mask = register_mask;
+
         next_command = command;
 
         next_spi_tx_data = spi_tx_data;
@@ -112,6 +120,7 @@ module control (
 
                     case (spi_rx_data[3:0])
                         4'h2: next_state = STATE_READ_REGISTER_1;
+                        4'h3: next_state = STATE_WRITE_REGISTER_1;
                         4'h4: next_state = STATE_TX_1;
                         4'h5: next_state = STATE_RX_1;
                         4'hf: next_state = STATE_RESET;
@@ -138,6 +147,28 @@ module control (
             begin
                 if (spi_rx_strobe)
                     next_state = STATE_READ_REGISTER_1;
+            end
+
+            STATE_WRITE_REGISTER_1:
+            begin
+                if (spi_rx_strobe)
+                begin
+                    next_register_mask = spi_rx_data;
+
+                    next_state = STATE_WRITE_REGISTER_2;
+                end
+            end
+
+            STATE_WRITE_REGISTER_2:
+            begin
+                if (spi_rx_strobe)
+                begin
+                    case (command[7:4])
+                        4'h2: next_control_register = spi_rx_data & register_mask;
+                    endcase
+
+                    next_state = STATE_IDLE;
+                end
             end
 
             STATE_TX_1:
@@ -254,6 +285,9 @@ module control (
     begin
         state <= next_state;
 
+        control_register <= next_control_register;
+        register_mask <= next_register_mask;
+
         command <= next_command;
 
         spi_tx_data <= next_spi_tx_data;
@@ -273,6 +307,8 @@ module control (
         if (reset)
         begin
             state <= STATE_IDLE;
+
+            control_register <= 8'b00000000;
 
             command <= 0;
 

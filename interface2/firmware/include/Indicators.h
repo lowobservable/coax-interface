@@ -16,6 +16,7 @@ public:
 
     void setStatus(const status_t status);
 
+    void tx();
     void rx();
     void error();
 
@@ -27,6 +28,7 @@ private:
     int _rxPin;
     int _errorPin;
     volatile status_t _status;
+    volatile int _txState;
     volatile int _rxState;
     volatile int _errorState;
 };

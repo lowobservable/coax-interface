@@ -19,6 +19,7 @@ SPICoaxTransceiver coax(ICE40_CS_PIN);
 
 volatile enum {
     COAX_INTERRUPT_STATE_IDLE,
+    COAX_INTERRUPT_STATE_DISABLED,
     COAX_INTERRUPT_STATE_RECEIVING,
     COAX_INTERRUPT_STATE_RECEIVED,
     COAX_INTERRUPT_STATE_ERROR
@@ -78,6 +79,90 @@ void handleCoaxInterrupt()
 
         coaxInterruptState = COAX_INTERRUPT_STATE_RECEIVED;
     }
+}
+
+void attachCoaxInterrupt()
+{
+    pinMode(COAX_IRQ_PIN, INPUT);
+
+    attachInterrupt(digitalPinToInterrupt(COAX_IRQ_PIN), handleCoaxInterrupt, RISING);
+}
+
+void detachCoaxInterrupt()
+{
+    detachInterrupt(digitalPinToInterrupt(COAX_IRQ_PIN));
+}
+
+void selfTest()
+{
+    SerialUSB.println("SELF TEST");
+
+    // Disable the interrupt during the self test as the receive interrupt can
+    // interrupt the transmit routine and cause the SPI transaction to be
+    // corrupted.
+    coaxInterruptState = COAX_INTERRUPT_STATE_DISABLED;
+
+    coax.setLoopback(true);
+
+    coax.reset();
+
+    uint16_t transmitBuffer[256];
+    uint16_t receiveBuffer[256];
+
+    for (size_t index = 0; index < 256; index++) {
+        transmitBuffer[index] = index;
+    }
+
+    for (size_t count = 1; count < 256; count++) {
+        SerialUSB.print("C=");
+        SerialUSB.println(count);
+
+        int transmitCount = coax.transmit(transmitBuffer, count);
+
+        if (transmitCount < 0) {
+            SerialUSB.print("  TX error ");
+            SerialUSB.println(transmitCount);
+            break;
+        }
+
+        // TODO: let's not assume that the TX has started or is complete...
+
+        int receiveCount = coax.receive(receiveBuffer, count);
+
+        if (receiveCount < 0) {
+            SerialUSB.print("  RX error ");
+            SerialUSB.println(receiveCount);
+            break;
+        }
+
+        if (receiveCount != count) {
+            SerialUSB.print("  RX count mismatch, received ");
+            SerialUSB.println(receiveCount);
+            break;
+        }
+
+        bool mismatch = false;
+
+        for (size_t index = 0; index < count; index++) {
+            if (receiveBuffer[index] != transmitBuffer[index]) {
+                mismatch = true;
+                break;
+            }
+        }
+
+        if (mismatch) {
+            SerialUSB.println("  RX data mismatch");
+            break;
+        }
+    }
+
+    coax.reset();
+
+    coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
+
+    coax.setLoopback(false);
+
+    SerialUSB.println("done");
 }
 
 void handleReceiveData(const uint16_t *buffer, const size_t count)
@@ -164,9 +249,7 @@ void setup()
         delay(1000);
     }
 
-    pinMode(COAX_IRQ_PIN, INPUT);
-
-    attachInterrupt(digitalPinToInterrupt(COAX_IRQ_PIN), handleCoaxInterrupt, RISING);
+    attachCoaxInterrupt();
 
     delay(500);
 
@@ -198,27 +281,14 @@ void loop()
     if (SerialUSB.available()) {
         char input = SerialUSB.read();
 
-        if (input == 'r') {
-            coax.reset();
+        if (input == 'R') {
 
             SerialUSB.println("RESET");
-        } else if (input == 's') {
+            coax.reset();
+        } else if (input == 'r') {
             testReadRegister();
-        } else if (input == 't') {
-            coaxBuffer[0] = 1;
-            coaxBuffer[1] = 2;
-
-            int count = coax.transmit(coaxBuffer, 2);
-
-            if (count < 0) {
-                SerialUSB.print("TX unknown ");
-                SerialUSB.print(count);
-                SerialUSB.println("error");
-            } else {
-                SerialUSB.print("TX ");
-                SerialUSB.print(count);
-                SerialUSB.println(" word(s)");
-            }
+        } else if (input == 'T') {
+            selfTest();
         }
 
         SerialUSB.flush();

@@ -33,24 +33,24 @@ module top (
 
     output irq
 );
-    wire internal_rx;
+    wire xxx_rx;
 
     SB_IO_OD #(
         .PIN_TYPE(6'b000001),
         .NEG_TRIGGER(1'b0)
     ) rx_io_od (
         .PACKAGEPIN(rx),
-        .DIN0(internal_rx)
+        .DIN0(xxx_rx)
     );
 
-    wire internal_tx_delay;
+    wire xxx_tx_delay;
 
     SB_IO_OD #(
         .PIN_TYPE(6'b011001),
         .NEG_TRIGGER(1'b0)
     ) tx_delay_io_od (
         .PACKAGEPIN(tx_delay),
-        .DOUT0(internal_tx_delay)
+        .DOUT0(xxx_tx_delay)
     );
 
     reg rx_0 = 0;
@@ -58,7 +58,7 @@ module top (
 
     always @(posedge clk)
     begin
-        rx_0 <= internal_rx;
+        rx_0 <= xxx_rx;
         rx_1 <= rx_0;
     end
 
@@ -82,10 +82,9 @@ module top (
 
     wire loopback;
 
-    wire xxx_tx_active;
-    wire xxx_tx;
-
     wire tx_reset;
+    wire internal_tx_active;
+    wire internal_tx;
     wire [9:0] tx_data;
     wire tx_load_strobe;
     wire tx_start_strobe;
@@ -99,8 +98,8 @@ module top (
     ) coax_buffered_tx (
         .clk(clk),
         .reset(tx_reset),
-        .active(xxx_tx_active),
-        .tx(xxx_tx),
+        .active(internal_tx_active),
+        .tx(internal_tx),
         .data(tx_data),
         .load_strobe(tx_load_strobe),
         .start_strobe(tx_start_strobe),
@@ -108,10 +107,6 @@ module top (
         .full(tx_full),
         .ready(tx_ready)
     );
-
-    assign tx_active = xxx_tx_active;
-    assign tx_inverted = tx_load_strobe;
-    assign internal_tx_delay = tx_start_strobe;
 
     wire rx_reset;
     wire rx_active;
@@ -126,7 +121,7 @@ module top (
     ) coax_buffered_rx (
         .clk(clk),
         .reset(rx_reset),
-        .rx(loopback ? xxx_tx : (!tx_active ? rx_1 : 0)),
+        .rx(loopback ? internal_tx : (!internal_tx_active ? rx_1 : 0)),
         .active(rx_active),
         .error(rx_error),
         .data(rx_data),
@@ -147,7 +142,7 @@ module top (
         .loopback(loopback),
 
         .tx_reset(tx_reset),
-        .tx_active(xxx_tx_active),
+        .tx_active(internal_tx_active),
         .tx_data(tx_data),
         .tx_load_strobe(tx_load_strobe),
         .tx_start_strobe(tx_start_strobe),
@@ -161,6 +156,17 @@ module top (
         .rx_data(rx_data),
         .rx_read_strobe(rx_read_strobe),
         .rx_empty(rx_empty)
+    );
+
+    coax_tx_distorter #(
+        .CLOCKS_PER_BIT(16)
+    ) coax_tx_distorter (
+        .clk(clk),
+        .active_input(!loopback && internal_tx_active),
+        .tx_input(internal_tx),
+        .active_output(tx_active),
+        .tx_delay(xxx_tx_delay),
+        .tx_inverted(tx_inverted)
     );
 
     assign irq = rx_active || rx_error;

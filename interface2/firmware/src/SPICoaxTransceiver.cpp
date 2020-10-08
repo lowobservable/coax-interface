@@ -5,6 +5,7 @@
 #include <SPICoaxTransceiver.h>
 
 #define COAX_COMMAND_READ_REGISTER 0x2
+#define COAX_COMMAND_WRITE_REGISTER 0x3
 #define COAX_COMMAND_TX 0x4
 #define COAX_COMMAND_RX 0x5
 #define COAX_COMMAND_RESET 0xff
@@ -60,6 +61,19 @@ uint8_t SPICoaxTransceiver::readRegister(const uint8_t index)
     return receiveBuffer[1];
 }
 
+void SPICoaxTransceiver::writeRegister(const uint8_t index, const uint8_t value,
+        const uint8_t mask)
+{
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    uint8_t transmitBuffer[3] = { COAX_COMMAND_WRITE_REGISTER | (index << 4), mask, value };
+    uint8_t receiveBuffer[3];
+
+    spiTransfer(transmitBuffer, receiveBuffer, 3);
+
+    LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
+}
+
 int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCount)
 {
     //SPI.beginTransaction(spiSettings);
@@ -76,7 +90,7 @@ int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCoun
     uint8_t error = 0;
 
     do {
-        transmitBuffer[0] = (buffer[count] >> 8) | 0x03;
+        transmitBuffer[0] = (buffer[count] >> 8) & 0x03;
         transmitBuffer[1] = buffer[count] & 0xff;
 
         spiTransfer(transmitBuffer, receiveBuffer, 2);
@@ -172,6 +186,11 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
     }
 
     return count;
+}
+
+void SPICoaxTransceiver::setLoopback(bool loopback)
+{
+    writeRegister(COAX_REGISTER_CONTROL, loopback ? COAX_REGISTER_CONTROL_LOOPBACK : 0, COAX_REGISTER_CONTROL_LOOPBACK);
 }
 
 // TODO: move these to the class?

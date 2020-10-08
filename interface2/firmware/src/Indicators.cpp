@@ -58,6 +58,13 @@ void Indicators::setStatus(const status_t status)
     }
 }
 
+void Indicators::tx()
+{
+    if (_txState == 0) {
+        _txState = 2;
+    }
+}
+
 void Indicators::rx()
 {
     if (_rxState == 0) {
@@ -76,6 +83,12 @@ void Indicators::refresh()
 {
     if (_status == CONFIGURING) {
         digitalWrite(_statusPin, !digitalRead(_statusPin));
+    }
+
+    if (_txState > 0) {
+        digitalWrite(_txPin, _txState == 2 ? HIGH : LOW);
+
+        _txState--;
     }
 
     if (_rxState > 0) {
