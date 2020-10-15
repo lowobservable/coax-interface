@@ -23,7 +23,8 @@ module coax_tx_tb;
         .clk(clk),
         .reset(reset),
         .data(data),
-        .strobe(strobe)
+        .strobe(strobe),
+        .parity(1)
     );
 
     initial

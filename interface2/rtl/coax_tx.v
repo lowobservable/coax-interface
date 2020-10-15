@@ -21,7 +21,8 @@ module coax_tx (
     output reg tx,
     input [9:0] data,
     input strobe,
-    output ready
+    output ready,
+    input parity
 );
     parameter CLOCKS_PER_BIT = 8;
 
@@ -190,8 +191,8 @@ module coax_tx (
                     next_bit_counter = 9;
                     next_state = DATA_BIT;
 
-                    // Even parity includes the sync bit.
-                    next_output_parity_bit = ^{ 1'b1, output_data };
+                    // Parity includes the sync bit.
+                    next_output_parity_bit = (parity == 1 ? ^{ 1'b1, output_data } : ~^{ 1'b1, output_data });
                 end
             end
 

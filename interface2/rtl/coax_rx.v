@@ -21,7 +21,8 @@ module coax_rx (
     output reg active,
     output reg error,
     output reg [9:0] data,
-    output reg strobe = 0
+    output reg strobe = 0,
+    input parity
 );
     parameter CLOCKS_PER_BIT = 8;
 
@@ -307,8 +308,8 @@ module coax_rx (
                begin
                    if (synchronized)
                    begin
-                       // Even parity includes the sync bit.
-                       if (rx == ^{ 1'b1, input_data })
+                       // Parity includes the sync bit.
+                       if (rx == (parity == 1 ? ^{ 1'b1, input_data } : ~^{ 1'b1, input_data }))
                        begin
                            next_strobe = 1;
                            next_data = input_data;

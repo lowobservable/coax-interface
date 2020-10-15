@@ -93,16 +93,19 @@ void detachCoaxInterrupt()
     detachInterrupt(digitalPinToInterrupt(COAX_IRQ_PIN));
 }
 
-void selfTest()
+int testLoopbackTransmitReceive(const size_t count, const CoaxParity txParity,
+        const CoaxParity rxParity, const int expectedTransmitResult,
+        const int expectedReceiveResult)
 {
-    SerialUSB.println("SELF TEST");
-
     // Disable the interrupt during the self test as the receive interrupt can
     // interrupt the transmit routine and cause the SPI transaction to be
     // corrupted.
     coaxInterruptState = COAX_INTERRUPT_STATE_DISABLED;
 
     coax.setLoopback(true);
+
+    coax.setTXParity(txParity);
+    coax.setRXParity(rxParity);
 
     coax.reset();
 
@@ -113,56 +116,94 @@ void selfTest()
         transmitBuffer[index] = index;
     }
 
-    for (size_t count = 1; count < 256; count++) {
-        SerialUSB.print("C=");
-        SerialUSB.println(count);
+    int result = 0;
+    int transmitResult;
+    int receiveResult;
 
-        int transmitCount = coax.transmit(transmitBuffer, count);
+    transmitResult = coax.transmit(transmitBuffer, count);
 
-        if (transmitCount < 0) {
-            SerialUSB.print("  TX error ");
-            SerialUSB.println(transmitCount);
-            break;
+    if (transmitResult != expectedTransmitResult) {
+        result = -1;
+        goto CLEANUP;
+    }
+
+    receiveResult = coax.receive(receiveBuffer, count);
+
+    if (receiveResult != expectedReceiveResult) {
+        result = -2;
+        goto CLEANUP;
+    }
+
+    if (expectedReceiveResult == count) {
+        if (transmitResult != count) {
+            result = -3;
+            goto CLEANUP;
         }
 
-        // TODO: let's not assume that the TX has started or is complete...
-
-        int receiveCount = coax.receive(receiveBuffer, count);
-
-        if (receiveCount < 0) {
-            SerialUSB.print("  RX error ");
-            SerialUSB.println(receiveCount);
-            break;
+        if (receiveResult != count) {
+            result = -4;
+            goto CLEANUP;
         }
-
-        if (receiveCount != count) {
-            SerialUSB.print("  RX count mismatch, received ");
-            SerialUSB.println(receiveCount);
-            break;
-        }
-
-        bool mismatch = false;
 
         for (size_t index = 0; index < count; index++) {
             if (receiveBuffer[index] != transmitBuffer[index]) {
-                mismatch = true;
-                break;
+                result = -5;
+                goto CLEANUP;
             }
-        }
-
-        if (mismatch) {
-            SerialUSB.println("  RX data mismatch");
-            break;
         }
     }
 
+CLEANUP:
     coax.reset();
 
     coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
 
     coax.setLoopback(false);
 
-    SerialUSB.println("done");
+    return result;
+}
+
+void selfTest()
+{
+    SerialUSB.println("SELF TEST");
+
+    bool allPassed = true;
+
+    SerialUSB.print("  - Parity mismatch: ");
+
+    int result = testLoopbackTransmitReceive(1, CoaxParity::Odd, CoaxParity::Even, 1, -2);
+
+    if (result == 0) {
+        SerialUSB.println("PASS");
+    } else {
+        allPassed = false;
+
+        SerialUSB.print("FAIL, result = ");
+        SerialUSB.println(result);
+    }
+
+    for (size_t count = 1; count <= 64; count++) {
+        SerialUSB.print("  - ");
+        SerialUSB.print(count);
+        SerialUSB.print(" words: ");
+
+        result = testLoopbackTransmitReceive(count, CoaxParity::Even, CoaxParity::Even, count, count);
+
+        if (result == 0) {
+            SerialUSB.println("PASS");
+        } else {
+            allPassed = false;
+
+            SerialUSB.print("FAIL, result = ");
+            SerialUSB.println(result);
+        }
+    }
+
+    if (allPassed) {
+        SerialUSB.println("done, all PASS");
+    } else {
+        SerialUSB.println("done, some FAILs");
+    }
 }
 
 void handleReceiveData(const uint16_t *buffer, const size_t count)
@@ -201,9 +242,10 @@ void testReadRegister()
 
     SerialUSB.println("REGISTERS");
 
-    SerialUSB.println("  Status");
-
     uint8_t status = coax.readRegister(COAX_REGISTER_STATUS);
+
+    SerialUSB.print("  Status = ");
+    SerialUSB.println(status);
 
     SerialUSB.print("    RX Error    = ");
     SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ERROR ? "Y" : "N");
@@ -217,12 +259,19 @@ void testReadRegister()
     SerialUSB.print("    TX Active   = ");
     SerialUSB.println(status & COAX_REGISTER_STATUS_TX_ACTIVE ? "Y" : "N");
 
-    SerialUSB.println("  Control");
-
     uint8_t control = coax.readRegister(COAX_REGISTER_CONTROL);
+
+    SerialUSB.print("  Control = ");
+    SerialUSB.println(control);
 
     SerialUSB.print("    Loopback    = ");
     SerialUSB.println(control & COAX_REGISTER_CONTROL_LOOPBACK ? "Y" : "N");
+
+    SerialUSB.print("    TX Parity   = ");
+    SerialUSB.println(control & COAX_REGISTER_CONTROL_TX_PARITY ? "Even" : "Odd");
+
+    SerialUSB.print("    RX Parity   = ");
+    SerialUSB.println(control & COAX_REGISTER_CONTROL_RX_PARITY ? "Even" : "Odd");
 }
 
 void setup()
@@ -289,6 +338,10 @@ void loop()
             testReadRegister();
         } else if (input == 'T') {
             selfTest();
+        } else if (input == 'x') {
+            SerialUSB.println("blah!");
+            coax.setTXParity(CoaxParity::Even);
+            coax.setRXParity(CoaxParity::Even);
         }
 
         SerialUSB.flush();

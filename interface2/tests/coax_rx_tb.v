@@ -27,7 +27,8 @@ module coax_rx_tb;
     ) dut (
         .clk(clk),
         .reset(reset),
-        .rx(rx)
+        .rx(rx),
+        .parity(1)
     );
 
     initial

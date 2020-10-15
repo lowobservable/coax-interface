@@ -188,9 +188,19 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
     return count;
 }
 
-void SPICoaxTransceiver::setLoopback(bool loopback)
+void SPICoaxTransceiver::setLoopback(const bool loopback)
 {
     writeRegister(COAX_REGISTER_CONTROL, loopback ? COAX_REGISTER_CONTROL_LOOPBACK : 0, COAX_REGISTER_CONTROL_LOOPBACK);
+}
+
+void SPICoaxTransceiver::setTXParity(const CoaxParity parity)
+{
+    writeRegister(COAX_REGISTER_CONTROL, parity == CoaxParity::Even ? COAX_REGISTER_CONTROL_TX_PARITY : 0, COAX_REGISTER_CONTROL_TX_PARITY);
+}
+
+void SPICoaxTransceiver::setRXParity(const CoaxParity parity)
+{
+    writeRegister(COAX_REGISTER_CONTROL, parity == CoaxParity::Even ? COAX_REGISTER_CONTROL_RX_PARITY : 0, COAX_REGISTER_CONTROL_RX_PARITY);
 }
 
 // TODO: move these to the class?

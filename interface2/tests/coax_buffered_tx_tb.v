@@ -26,7 +26,8 @@ module coax_buffered_tx_tb;
         .reset(reset),
         .data(data),
         .load_strobe(load_strobe),
-        .start_strobe(start_strobe)
+        .start_strobe(start_strobe),
+        .parity(1)
     );
 
     initial

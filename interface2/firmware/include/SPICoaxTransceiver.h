@@ -8,8 +8,16 @@
 
 #define COAX_REGISTER_CONTROL 0x2
 #define COAX_REGISTER_CONTROL_LOOPBACK 0x01
+#define COAX_REGISTER_CONTROL_TX_PARITY (1 << 3)
+#define COAX_REGISTER_CONTROL_RX_PARITY (1 << 6)
 
 #define COAX_REGISTER_DEVICE_ID 0xf
+
+enum class CoaxParity
+{
+    Odd = 0,
+    Even = 1
+};
 
 class SPICoaxTransceiver
 {
@@ -26,7 +34,9 @@ public:
     int transmit(const uint16_t *buffer, const size_t bufferCount);
     int receive(uint16_t *buffer, const size_t bufferSize);
 
-    void setLoopback(bool loopback);
+    void setLoopback(const bool loopback);
+    void setTXParity(const CoaxParity parity);
+    void setRXParity(const CoaxParity parity);
 
     inline bool isTXComplete()
     {

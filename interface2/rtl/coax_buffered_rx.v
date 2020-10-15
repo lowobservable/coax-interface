@@ -23,7 +23,8 @@ module coax_buffered_rx (
     output [9:0] data,
     input read_strobe,
     output empty,
-    output full
+    output full,
+    input parity
 );
     parameter CLOCKS_PER_BIT = 8;
     parameter DEPTH = 256;
@@ -43,7 +44,8 @@ module coax_buffered_rx (
         .active(active),
         .error(coax_rx_error),
         .data(coax_rx_data),
-        .strobe(coax_rx_strobe)
+        .strobe(coax_rx_strobe),
+        .parity(parity)
     );
 
     wire [9:0] fifo_data;

@@ -36,6 +36,7 @@ module control (
     input tx_empty,
     input tx_full,
     input tx_ready,
+    output tx_parity,
     
     // RX
     output reg rx_reset,
@@ -43,7 +44,8 @@ module control (
     input rx_error,
     input [9:0] rx_data,
     output reg rx_read_strobe,
-    input rx_empty
+    input rx_empty,
+    output rx_parity
 );
     localparam STATE_IDLE = 0;
     localparam STATE_READ_REGISTER_1 = 1;
@@ -62,7 +64,7 @@ module control (
     reg [7:0] state = STATE_IDLE;
     reg [7:0] next_state;
 
-    reg [7:0] control_register = 8'b00000000;
+    reg [7:0] control_register = 8'b01001000;
     reg [7:0] next_control_register;
     reg [7:0] register_mask;
     reg [7:0] next_register_mask;
@@ -164,7 +166,7 @@ module control (
                 if (spi_rx_strobe)
                 begin
                     case (command[7:4])
-                        4'h2: next_control_register = spi_rx_data & register_mask;
+                        4'h2: next_control_register = (control_register & ~register_mask) | (spi_rx_data & register_mask);
                     endcase
 
                     next_state = STATE_IDLE;
@@ -308,7 +310,7 @@ module control (
         begin
             state <= STATE_IDLE;
 
-            control_register <= 8'b00000000;
+            control_register <= 8'b01001000;
 
             command <= 0;
 
@@ -330,4 +332,7 @@ module control (
     end
 
     assign loopback = control_register[0];
+
+    assign tx_parity = control_register[3];
+    assign rx_parity = control_register[6];
 endmodule

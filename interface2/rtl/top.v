@@ -91,6 +91,7 @@ module top (
     wire tx_empty;
     wire tx_full;
     wire tx_ready;
+    wire tx_parity;
 
     coax_buffered_tx #(
         .CLOCKS_PER_BIT(16),
@@ -105,7 +106,8 @@ module top (
         .start_strobe(tx_start_strobe),
         .empty(tx_empty),
         .full(tx_full),
-        .ready(tx_ready)
+        .ready(tx_ready),
+        .parity(tx_parity)
     );
 
     wire rx_reset;
@@ -114,6 +116,7 @@ module top (
     wire [9:0] rx_data;
     wire rx_read_strobe;
     wire rx_empty;
+    wire rx_parity;
 
     coax_buffered_rx #(
         .CLOCKS_PER_BIT(16),
@@ -126,7 +129,8 @@ module top (
         .error(rx_error),
         .data(rx_data),
         .read_strobe(rx_read_strobe),
-        .empty(rx_empty)
+        .empty(rx_empty),
+        .parity(rx_parity)
     );
 
     control control (
@@ -149,13 +153,15 @@ module top (
         .tx_empty(tx_empty),
         .tx_full(tx_full),
         .tx_ready(tx_ready),
+        .tx_parity(tx_parity),
 
         .rx_reset(rx_reset),
         .rx_active(rx_active),
         .rx_error(rx_error),
         .rx_data(rx_data),
         .rx_read_strobe(rx_read_strobe),
-        .rx_empty(rx_empty)
+        .rx_empty(rx_empty),
+        .rx_parity(rx_parity)
     );
 
     coax_tx_distorter #(

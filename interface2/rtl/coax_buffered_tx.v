@@ -24,7 +24,8 @@ module coax_buffered_tx (
     input start_strobe,
     output empty,
     output full,
-    output ready
+    output ready,
+    input parity
 );
     parameter CLOCKS_PER_BIT = 8;
     parameter DEPTH = 256;
@@ -51,7 +52,8 @@ module coax_buffered_tx (
         .tx(tx),
         .data(coax_tx_data),
         .strobe(coax_tx_strobe),
-        .ready(coax_tx_ready)
+        .ready(coax_tx_ready),
+        .parity(parity)
     );
 
     reg fifo_read_strobe = 0;
