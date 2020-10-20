@@ -20,7 +20,8 @@ module coax_buffered_tx_tb;
 
     coax_buffered_tx #(
         .CLOCKS_PER_BIT(8),
-        .DEPTH(8)
+        .DEPTH(8),
+        .START_DEPTH(4)
     ) dut (
         .clk(clk),
         .reset(reset),
@@ -36,6 +37,7 @@ module coax_buffered_tx_tb;
         $dumpvars(0, coax_buffered_tx_tb);
 
         test_1;
+        test_2;
 
         $finish;
     end
@@ -76,6 +78,53 @@ module coax_buffered_tx_tb;
         #1000;
 
         $display("END: test_1");
+    end
+    endtask
+
+    task test_2;
+    begin
+        $display("START: test_2");
+
+        dut_reset;
+
+        #8;
+
+        data = 10'b0101110101;
+        load_strobe = 1;
+        #2;
+        load_strobe = 0;
+
+        #8;
+
+        data = 10'b1010001110;
+        load_strobe = 1;
+        #2;
+        load_strobe = 0;
+
+        #8;
+
+        data = 10'b0101110101;
+        load_strobe = 1;
+        #2;
+        load_strobe = 0;
+
+        #8;
+
+        data = 10'b1010001110;
+        load_strobe = 1;
+        #2;
+        load_strobe = 0;
+
+        #8;
+
+        data = 10'b0101110101;
+        load_strobe = 1;
+        #2;
+        load_strobe = 0;
+
+        #1200;
+
+        $display("END: test_2");
     end
     endtask
 

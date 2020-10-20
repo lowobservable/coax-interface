@@ -48,21 +48,19 @@ module coax_buffered_rx (
         .parity(parity)
     );
 
-    wire [9:0] fifo_data;
+    wire [9:0] coax_buffer_data;
 
-    // TODO: move this to a coax_buffer module...
-    fifo_sync_ram #(
-        .DEPTH(DEPTH),
-        .WIDTH(10)
-    ) fifo (
-        .wr_data(coax_rx_data),
-        .wr_ena(coax_rx_strobe),
-        .wr_full(full),
-        .rd_data(fifo_data),
-        .rd_ena(read_strobe && !error),
-        .rd_empty(empty),
+    coax_buffer #(
+        .DEPTH(DEPTH)
+    ) coax_buffer (
         .clk(clk),
-        .rst(reset)
+        .reset(reset),
+        .write_data(coax_rx_data),
+        .write_strobe(coax_rx_strobe),
+        .read_data(coax_buffer_data),
+        .read_strobe(read_strobe && !error),
+        .empty(empty),
+        .full(full)
     );
 
     wire overflow;
@@ -83,5 +81,5 @@ module coax_buffered_rx (
     end
 
     assign error = overflow || overflowed || coax_rx_error;
-    assign data = (overflow || overflowed) ? ERROR_OVERFLOW : (coax_rx_error ? coax_rx_data : (empty ? 10'b0 : fifo_data));
+    assign data = (overflow || overflowed) ? ERROR_OVERFLOW : (coax_rx_error ? coax_rx_data : (empty ? 10'b0 : coax_buffer_data));
 endmodule

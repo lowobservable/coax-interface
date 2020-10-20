@@ -29,6 +29,7 @@ module coax_buffered_tx (
 );
     parameter CLOCKS_PER_BIT = 8;
     parameter DEPTH = 256;
+    parameter START_DEPTH = DEPTH * 0.75;
 
     localparam STATE_IDLE = 0;
     localparam STATE_TRANSMITTING_1 = 1;
@@ -56,22 +57,23 @@ module coax_buffered_tx (
         .parity(parity)
     );
 
-    reg fifo_read_strobe = 0;
-    reg next_fifo_read_strobe;
+    reg coax_buffer_read_strobe = 0;
+    reg next_coax_buffer_read_strobe;
+    wire coax_buffer_almost_full;
 
-    // TODO: move this to a coax_buffer module...
-    fifo_sync_ram #(
+    coax_buffer #(
         .DEPTH(DEPTH),
-        .WIDTH(10)
-    ) fifo (
-        .wr_data(data),
-        .wr_ena(load_strobe),
-        .wr_full(full),
-        .rd_data(coax_tx_data),
-        .rd_ena(fifo_read_strobe),
-        .rd_empty(empty),
+        .ALMOST_FULL_THRESHOLD(START_DEPTH)
+    ) coax_buffer (
         .clk(clk),
-        .rst(reset)
+        .reset(reset),
+        .write_data(data),
+        .write_strobe(load_strobe),
+        .read_data(coax_tx_data),
+        .read_strobe(coax_buffer_read_strobe),
+        .empty(empty),
+        .almost_full(coax_buffer_almost_full),
+        .full(full)
     );
 
     always @(*)
@@ -79,12 +81,12 @@ module coax_buffered_tx (
         next_state = state;
 
         next_coax_tx_strobe = 0;
-        next_fifo_read_strobe = 0;
+        next_coax_buffer_read_strobe = 0;
 
         case (state)
             STATE_IDLE:
             begin
-                if (start_strobe && !empty)
+                if ((start_strobe && !empty) || coax_buffer_almost_full)
                     next_state = STATE_TRANSMITTING_1;
             end
 
@@ -106,7 +108,7 @@ module coax_buffered_tx (
 
             STATE_TRANSMITTING_2:
             begin
-                next_fifo_read_strobe = 1;
+                next_coax_buffer_read_strobe = 1;
                 next_state = STATE_TRANSMITTING_1;
             end
 
@@ -123,14 +125,14 @@ module coax_buffered_tx (
         state <= next_state;
 
         coax_tx_strobe <= next_coax_tx_strobe;
-        fifo_read_strobe <= next_fifo_read_strobe;
+        coax_buffer_read_strobe <= next_coax_buffer_read_strobe;
 
         if (reset)
         begin
             state <= STATE_IDLE;
 
             coax_tx_strobe <= 0;
-            fifo_read_strobe <= 0;
+            coax_buffer_read_strobe <= 0;
         end
     end
 

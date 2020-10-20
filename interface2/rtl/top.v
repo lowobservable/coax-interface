@@ -95,7 +95,8 @@ module top (
 
     coax_buffered_tx #(
         .CLOCKS_PER_BIT(16),
-        .DEPTH(2048)
+        .DEPTH(2048),
+        .START_DEPTH(1536)
     ) coax_buffered_tx (
         .clk(clk),
         .reset(tx_reset),
