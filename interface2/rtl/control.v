@@ -47,6 +47,8 @@ module control (
     input rx_empty,
     output rx_parity
 );
+    parameter DEFAULT_CONTROL_REGISTER = 8'b01001000;
+
     localparam STATE_IDLE = 0;
     localparam STATE_READ_REGISTER_1 = 1;
     localparam STATE_READ_REGISTER_2 = 2;
@@ -64,7 +66,7 @@ module control (
     reg [7:0] state = STATE_IDLE;
     reg [7:0] next_state;
 
-    reg [7:0] control_register = 8'b01001000;
+    reg [7:0] control_register = DEFAULT_CONTROL_REGISTER;
     reg [7:0] next_control_register;
     reg [7:0] register_mask;
     reg [7:0] next_register_mask;
@@ -310,7 +312,7 @@ module control (
         begin
             state <= STATE_IDLE;
 
-            control_register <= 8'b01001000;
+            control_register <= DEFAULT_CONTROL_REGISTER;
 
             command <= 0;
 
