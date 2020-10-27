@@ -62,22 +62,37 @@ module top (
         rx_1 <= rx_0;
     end
 
+    wire clk_fast;
+
+    SB_PLL40_CORE #(
+        .FEEDBACK_PATH("SIMPLE"),
+        .DIVR(4'b0000),
+        .DIVF(7'b0010000),
+        .DIVQ(3'b011),
+        .FILTER_RANGE(3'b011)
+    ) clk_fast_pll (
+        .RESETB(1'b1),
+        .BYPASS(1'b0),
+        .REFERENCECLK(clk),
+        .PLLOUTCORE(clk_fast)
+    );
+
     wire [7:0] spi_rx_data;
     wire spi_rx_strobe;
     wire [7:0] spi_tx_data;
     wire spi_tx_strobe;
 
-    spi_device spi (
-        .clk(clk),
-        .reset(/* TODO */ 0),
-        .spi_clk(spi_sck),
+    dual_clock_spi_device spi (
+        .clk_slow(clk),
+        .clk_fast(clk_fast),
+        .spi_sck(spi_sck),
         .spi_cs(spi_cs),
-        .spi_mosi(spi_sdi),
-        .spi_miso(spi_sdo),
-        .spi_rx_data(spi_rx_data),
-        .spi_rx_strobe(spi_rx_strobe),
-        .spi_tx_data(spi_tx_data),
-        .spi_tx_strobe(spi_tx_strobe)
+        .spi_sdi(spi_sdi),
+        .spi_sdo(spi_sdo),
+        .rx_data(spi_rx_data),
+        .rx_strobe(spi_rx_strobe),
+        .tx_data(spi_tx_data),
+        .tx_strobe(spi_tx_strobe)
     );
 
     wire loopback;
