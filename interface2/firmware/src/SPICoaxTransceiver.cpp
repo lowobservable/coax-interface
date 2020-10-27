@@ -26,6 +26,11 @@ bool SPICoaxTransceiver::begin()
 
     reset();
 
+    setLoopback(false);
+
+    setTXParity(CoaxParity::Even);
+    setRXParity(CoaxParity::Even);
+
     return true;
 }
 
@@ -213,7 +218,7 @@ static LL_SPI_InitTypeDef spiConfig = {
     .ClockPolarity = LL_SPI_POLARITY_LOW,
     .ClockPhase = LL_SPI_PHASE_1EDGE,
     .NSS = LL_SPI_NSS_SOFT, /* TODO: consider LL_SPI_NSS_HARD_INPUT */
-    .BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV32, // 2.5 MHz
+    .BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV8, // 10 MHz
     .BitOrder = LL_SPI_MSB_FIRST,
     .CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE,
     .CRCPoly = 0
