@@ -22,7 +22,7 @@ enum class CoaxParity
 class SPICoaxTransceiver
 {
 public:
-    SPICoaxTransceiver(const int csPin);
+    SPICoaxTransceiver(const int csPin, const int resetPin);
 
     bool begin();
 
@@ -50,6 +50,7 @@ public:
 
 private:
     int _csPin;
+    int _resetPin;
 
     bool spiSetup();
     bool spiTransfer(const uint8_t *transmitBuffer, uint8_t *receiveBuffer, const size_t count);

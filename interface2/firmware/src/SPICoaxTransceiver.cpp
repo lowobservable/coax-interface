@@ -10,13 +10,20 @@
 #define COAX_COMMAND_RX 0x5
 #define COAX_COMMAND_RESET 0xff
 
-SPICoaxTransceiver::SPICoaxTransceiver(const int csPin) : _csPin(csPin)
+SPICoaxTransceiver::SPICoaxTransceiver(const int csPin, const int resetPin) :
+    _csPin(csPin),
+    _resetPin(resetPin)
 {
 }
 
 bool SPICoaxTransceiver::begin()
 {
     spiSetup();
+
+    // vvv
+    pinMode(_resetPin, OUTPUT);
+    digitalWrite(_resetPin, LOW);
+    // ^^^
 
     uint8_t deviceId = readRegister(COAX_REGISTER_DEVICE_ID);
 

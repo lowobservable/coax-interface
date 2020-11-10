@@ -26,16 +26,16 @@ const PinName digitalPin[] = {
   PA_5, //D1
   PA_6, //D2
   PA_7, //D3
-  PB_0, //D4
-  PB_1, //D5
-  PB_2, //D6
-  PB_12, //D7
-  PB_13, //D8
-  PB_14, //D9
-  PB_15, //D10
-  PA_8, //D11
-  PA_8, //D12
-  PA_8, //D13
+  PB_1, //D4
+  PB_2, //D5
+  PA_3, //D6
+  PB_0, //D7
+  PB_12, //D8
+  PB_13, //D9
+  PB_14, //D10
+  PB_15, //D11
+  PB_10, //D12
+  PB_11, //D13
   PA_8, //D14
   PA_8, //D15
   PA_8, //D16/A0

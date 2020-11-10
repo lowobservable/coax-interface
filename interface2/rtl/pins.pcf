@@ -1,20 +1,27 @@
 set_io clk 37
 set_frequency clk 38
 
+set_io reset 20
+
 # SPI
 set_io spi_sck 15
-set_frequency spi_sck 8
+set_frequency spi_sck 10
 
 set_io spi_cs 16
 set_io spi_sdi 17
 set_io spi_sdo 14
 
 # TX
-set_io tx_active 42
-set_io tx_inverted 43
-set_io tx_delay 41
+set_io tx_active 35
+set_io tx_inverted 36
+set_io tx_delay 34
 
 # RX
-set_io rx 40
+set_io rx 26
 
 set_io irq 13
+
+set_io gpio0 46
+set_io gpio1 47
+set_io gpio2 48
+set_io gpio3 6

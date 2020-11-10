@@ -17,6 +17,8 @@
 module top (
     input clk,
 
+    input reset,
+
     // SPI
     input spi_sck,
     input spi_cs,
@@ -31,34 +33,19 @@ module top (
     // RX
     input rx,
 
-    output irq
+    output irq,
+
+    output gpio0,
+    output gpio1,
+    output gpio2,
+    output gpio3
 );
-    wire xxx_rx;
-
-    SB_IO_OD #(
-        .PIN_TYPE(6'b000001),
-        .NEG_TRIGGER(1'b0)
-    ) rx_io_od (
-        .PACKAGEPIN(rx),
-        .DIN0(xxx_rx)
-    );
-
-    wire xxx_tx_delay;
-
-    SB_IO_OD #(
-        .PIN_TYPE(6'b011001),
-        .NEG_TRIGGER(1'b0)
-    ) tx_delay_io_od (
-        .PACKAGEPIN(tx_delay),
-        .DOUT0(xxx_tx_delay)
-    );
-
     reg rx_0 = 0;
     reg rx_1 = 0;
 
     always @(posedge clk)
     begin
-        rx_0 <= xxx_rx;
+        rx_0 <= rx;
         rx_1 <= rx_0;
     end
 
@@ -114,7 +101,7 @@ module top (
         .START_DEPTH(1536)
     ) coax_buffered_tx (
         .clk(clk),
-        .reset(tx_reset),
+        .reset(reset || tx_reset),
         .active(internal_tx_active),
         .tx(internal_tx),
         .data(tx_data),
@@ -139,7 +126,7 @@ module top (
         .DEPTH(2048)
     ) coax_buffered_rx (
         .clk(clk),
-        .reset(rx_reset),
+        .reset(reset || rx_reset),
         .rx(loopback ? internal_tx : (!internal_tx_active ? rx_1 : 0)),
         .active(rx_active),
         .error(rx_error),
@@ -151,7 +138,7 @@ module top (
 
     control control (
         .clk(clk),
-        .reset(/* TODO */ 0),
+        .reset(reset),
 
         .spi_cs(spi_cs),
         .spi_rx_data(spi_rx_data),
@@ -187,9 +174,14 @@ module top (
         .active_input(!loopback && internal_tx_active),
         .tx_input(internal_tx),
         .active_output(tx_active),
-        .tx_delay(xxx_tx_delay),
+        .tx_delay(tx_delay),
         .tx_inverted(tx_inverted)
     );
 
     assign irq = rx_active || rx_error;
+
+    assign gpio0 = 0;
+    assign gpio1 = 0;
+    assign gpio2 = 0;
+    assign gpio3 = 0;
 endmodule
