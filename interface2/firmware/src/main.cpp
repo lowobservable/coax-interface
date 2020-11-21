@@ -165,44 +165,44 @@ CLEANUP:
 
 void selfTest()
 {
-    SerialUSB.println("SELF TEST");
+    SERIAL_PORT_MONITOR.println("SELF TEST");
 
     bool allPassed = true;
 
-    SerialUSB.print("  - Parity mismatch: ");
+    SERIAL_PORT_MONITOR.print("  - Parity mismatch: ");
 
     int result = testLoopbackTransmitReceive(1, CoaxParity::Odd, CoaxParity::Even, 1, -2);
 
     if (result == 0) {
-        SerialUSB.println("PASS");
+        SERIAL_PORT_MONITOR.println("PASS");
     } else {
         allPassed = false;
 
-        SerialUSB.print("FAIL, result = ");
-        SerialUSB.println(result);
+        SERIAL_PORT_MONITOR.print("FAIL, result = ");
+        SERIAL_PORT_MONITOR.println(result);
     }
 
     for (size_t count = 1; count <= 64; count++) {
-        SerialUSB.print("  - ");
-        SerialUSB.print(count);
-        SerialUSB.print(" words: ");
+        SERIAL_PORT_MONITOR.print("  - ");
+        SERIAL_PORT_MONITOR.print(count);
+        SERIAL_PORT_MONITOR.print(" words: ");
 
         result = testLoopbackTransmitReceive(count, CoaxParity::Even, CoaxParity::Even, count, count);
 
         if (result == 0) {
-            SerialUSB.println("PASS");
+            SERIAL_PORT_MONITOR.println("PASS");
         } else {
             allPassed = false;
 
-            SerialUSB.print("FAIL, result = ");
-            SerialUSB.println(result);
+            SERIAL_PORT_MONITOR.print("FAIL, result = ");
+            SERIAL_PORT_MONITOR.println(result);
         }
     }
 
     if (allPassed) {
-        SerialUSB.println("done, all PASS");
+        SERIAL_PORT_MONITOR.println("done, all PASS");
     } else {
-        SerialUSB.println("done, some FAILs");
+        SERIAL_PORT_MONITOR.println("done, some FAILs");
     }
 }
 
@@ -210,73 +210,77 @@ void handleReceiveData(const uint16_t *buffer, const size_t count)
 {
     indicators.rx();
 
-    SerialUSB.print("RX ");
-    SerialUSB.print(count);
-    SerialUSB.println(" word(s)");
+    SERIAL_PORT_MONITOR.print("RX ");
+    SERIAL_PORT_MONITOR.print(count);
+    SERIAL_PORT_MONITOR.println(" word(s)");
 }
 
 void handleReceiveError(const int error)
 {
     indicators.error();
 
-    SerialUSB.print("RX ");
+    SERIAL_PORT_MONITOR.print("RX ");
 
     if (error == -1) {
-        SerialUSB.println("loss of mid-bit transition error");
+        SERIAL_PORT_MONITOR.println("loss of mid-bit transition error");
     } else if (error == -2) {
-        SerialUSB.println("parity error");
+        SERIAL_PORT_MONITOR.println("parity error");
     } else if (error == -4) {
-        SerialUSB.println("invalid end sequence error");
+        SERIAL_PORT_MONITOR.println("invalid end sequence error");
     } else if (error == -8) {
-        SerialUSB.println("coax_buffered_rx overflow error");
+        SERIAL_PORT_MONITOR.println("coax_buffered_rx overflow error");
     } else {
-        SerialUSB.print("unknown ");
-        SerialUSB.print(error);
-        SerialUSB.println("error");
+        SERIAL_PORT_MONITOR.print("unknown ");
+        SERIAL_PORT_MONITOR.print(error);
+        SERIAL_PORT_MONITOR.println("error");
     }
 }
 
 void testReadRegister()
 {
-    SerialUSB.println();
+    SERIAL_PORT_MONITOR.println();
 
-    SerialUSB.println("REGISTERS");
+    SERIAL_PORT_MONITOR.println("REGISTERS");
 
     uint8_t status = coax.readRegister(COAX_REGISTER_STATUS);
 
-    SerialUSB.print("  Status = ");
-    SerialUSB.println(status);
+    SERIAL_PORT_MONITOR.print("  Status = ");
+    SERIAL_PORT_MONITOR.println(status);
 
-    SerialUSB.print("    RX Error    = ");
-    SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ERROR ? "Y" : "N");
+    SERIAL_PORT_MONITOR.print("    RX Error    = ");
+    SERIAL_PORT_MONITOR.println(status & COAX_REGISTER_STATUS_RX_ERROR ? "Y" : "N");
 
-    SerialUSB.print("    RX Active   = ");
-    SerialUSB.println(status & COAX_REGISTER_STATUS_RX_ACTIVE ? "Y" : "N");
+    SERIAL_PORT_MONITOR.print("    RX Active   = ");
+    SERIAL_PORT_MONITOR.println(status & COAX_REGISTER_STATUS_RX_ACTIVE ? "Y" : "N");
 
-    SerialUSB.print("    TX Complete = ");
-    SerialUSB.println(status & COAX_REGISTER_STATUS_TX_COMPLETE ? "Y" : "N");
+    SERIAL_PORT_MONITOR.print("    TX Complete = ");
+    SERIAL_PORT_MONITOR.println(status & COAX_REGISTER_STATUS_TX_COMPLETE ? "Y" : "N");
 
-    SerialUSB.print("    TX Active   = ");
-    SerialUSB.println(status & COAX_REGISTER_STATUS_TX_ACTIVE ? "Y" : "N");
+    SERIAL_PORT_MONITOR.print("    TX Active   = ");
+    SERIAL_PORT_MONITOR.println(status & COAX_REGISTER_STATUS_TX_ACTIVE ? "Y" : "N");
 
     uint8_t control = coax.readRegister(COAX_REGISTER_CONTROL);
 
-    SerialUSB.print("  Control = ");
-    SerialUSB.println(control);
+    SERIAL_PORT_MONITOR.print("  Control = ");
+    SERIAL_PORT_MONITOR.println(control);
 
-    SerialUSB.print("    Loopback    = ");
-    SerialUSB.println(control & COAX_REGISTER_CONTROL_LOOPBACK ? "Y" : "N");
+    SERIAL_PORT_MONITOR.print("    Loopback    = ");
+    SERIAL_PORT_MONITOR.println(control & COAX_REGISTER_CONTROL_LOOPBACK ? "Y" : "N");
 
-    SerialUSB.print("    TX Parity   = ");
-    SerialUSB.println(control & COAX_REGISTER_CONTROL_TX_PARITY ? "Even" : "Odd");
+    SERIAL_PORT_MONITOR.print("    TX Parity   = ");
+    SERIAL_PORT_MONITOR.println(control & COAX_REGISTER_CONTROL_TX_PARITY ? "Even" : "Odd");
 
-    SerialUSB.print("    RX Parity   = ");
-    SerialUSB.println(control & COAX_REGISTER_CONTROL_RX_PARITY ? "Even" : "Odd");
+    SERIAL_PORT_MONITOR.print("    RX Parity   = ");
+    SERIAL_PORT_MONITOR.println(control & COAX_REGISTER_CONTROL_RX_PARITY ? "Even" : "Odd");
 }
 
 void setup()
 {
     indicators.begin();
+
+    SERIAL_PORT_MONITOR.begin(115200, SERIAL_8N1);
+
+    SERIAL_PORT_MONITOR.println("COAX");
 
     SerialUSB.begin();
 
@@ -307,16 +311,16 @@ void setup()
 
 void loop()
 {
-    static uint16_t coaxBuffer[COAX_BUFFER_SIZE];
+    static uint16_t buffer[COAX_BUFFER_SIZE];
 
     if (coaxInterruptState == COAX_INTERRUPT_STATE_RECEIVED) {
         size_t count = coaxInterruptBufferCount;
 
-        memcpy(coaxBuffer, coaxInterruptBuffer, count);
+        memcpy(buffer, coaxInterruptBuffer, count);
 
         coaxInterruptState = COAX_INTERRUPT_STATE_IDLE;
 
-        handleReceiveData(coaxBuffer, count);
+        handleReceiveData(buffer, count);
     }
 
     if (coaxInterruptState == COAX_INTERRUPT_STATE_ERROR) {
@@ -328,22 +332,19 @@ void loop()
     }
 
     if (SerialUSB.available()) {
-        char input = SerialUSB.read();
+        // ...
+    }
+
+    if (SERIAL_PORT_MONITOR.available()) {
+        char input = SERIAL_PORT_MONITOR.read();
 
         if (input == 'R') {
-
-            SerialUSB.println("RESET");
+            SERIAL_PORT_MONITOR.println("RESET");
             coax.reset();
         } else if (input == 'r') {
             testReadRegister();
         } else if (input == 'T') {
             selfTest();
-        } else if (input == 'x') {
-            SerialUSB.println("blah!");
-            coax.setTXParity(CoaxParity::Even);
-            coax.setRXParity(CoaxParity::Even);
         }
-
-        SerialUSB.flush();
     }
 }
