@@ -180,8 +180,8 @@ module top (
 
     assign irq = rx_active || rx_error;
 
-    assign gpio0 = 0;
-    assign gpio1 = 0;
-    assign gpio2 = 0;
+    assign gpio0 = rx_1;
+    assign gpio1 = tx_active;
+    assign gpio2 = rx_active;
     assign gpio3 = 0;
 endmodule

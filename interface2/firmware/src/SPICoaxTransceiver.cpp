@@ -10,6 +10,13 @@
 #define COAX_COMMAND_RX 0x5
 #define COAX_COMMAND_RESET 0xff
 
+// vvv
+#include <atomic.h>
+
+#define ATOMIC_BLOCK_START     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+#define ATOMIC_BLOCK_END }
+// ^^^
+
 SPICoaxTransceiver::SPICoaxTransceiver(const int csPin, const int resetPin) :
     _csPin(csPin),
     _resetPin(resetPin)
@@ -43,32 +50,30 @@ bool SPICoaxTransceiver::begin()
 
 void SPICoaxTransceiver::reset()
 {
-    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
     uint8_t transmitBuffer[1] = { COAX_COMMAND_RESET };
     uint8_t receiveBuffer[1];
+
+    ATOMIC_BLOCK_START
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
 
     spiTransfer(transmitBuffer, receiveBuffer, 1);
 
     LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
+    ATOMIC_BLOCK_END
 }
 
 uint8_t SPICoaxTransceiver::readRegister(const uint8_t index)
 {
-    //SPI.beginTransaction(spiSettings);
-
-    //digitalWrite(_csPin, LOW);
-    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
     uint8_t transmitBuffer[2] = { COAX_COMMAND_READ_REGISTER | (index << 4), 0x00 };
     uint8_t receiveBuffer[2];
 
+    ATOMIC_BLOCK_START
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
     spiTransfer(transmitBuffer, receiveBuffer, 2);
 
-    //digitalWrite(_csPin, HIGH);
     LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
-    //SPI.endTransaction();
+    ATOMIC_BLOCK_END
 
     return receiveBuffer[1];
 }
@@ -76,30 +81,30 @@ uint8_t SPICoaxTransceiver::readRegister(const uint8_t index)
 void SPICoaxTransceiver::writeRegister(const uint8_t index, const uint8_t value,
         const uint8_t mask)
 {
-    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
     uint8_t transmitBuffer[3] = { COAX_COMMAND_WRITE_REGISTER | (index << 4), mask, value };
     uint8_t receiveBuffer[3];
+
+    ATOMIC_BLOCK_START
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
 
     spiTransfer(transmitBuffer, receiveBuffer, 3);
 
     LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
+    ATOMIC_BLOCK_END
 }
 
 int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCount)
 {
-    //SPI.beginTransaction(spiSettings);
-
-    //digitalWrite(_csPin, LOW);
-    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
     uint8_t transmitBuffer[2] = { COAX_COMMAND_TX };
     uint8_t receiveBuffer[2];
 
-    spiTransfer(transmitBuffer, receiveBuffer, 1);
-
     size_t count = 0;
     uint8_t error = 0;
+
+    ATOMIC_BLOCK_START
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    spiTransfer(transmitBuffer, receiveBuffer, 1);
 
     do {
         transmitBuffer[0] = (buffer[count] >> 8) & 0x03;
@@ -113,10 +118,7 @@ int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCoun
             count++;
         } else if (value == 0x81) {
             // Overflow... we'll just try again
-            //continue;
-            // TODO!!!!
-            error = 99;
-            break;
+            continue;
         } else if (value == 0x82) {
             // Underflow...
             error = 1;
@@ -124,10 +126,8 @@ int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCoun
         }
     } while (count < bufferCount);
 
-    //digitalWrite(_csPin, HIGH);
     LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
-    //SPI.endTransaction();
+    ATOMIC_BLOCK_END
 
     if (error != 0) {
         return (-1) * error;
@@ -143,18 +143,16 @@ int SPICoaxTransceiver::transmit(const uint16_t *buffer, const size_t bufferCoun
 
 int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
 {
-    //SPI.beginTransaction(spiSettings);
-
-    //digitalWrite(_csPin, LOW);
-    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
     uint8_t transmitBuffer[2] = { COAX_COMMAND_RX };
     uint8_t receiveBuffer[2];
 
-    spiTransfer(transmitBuffer, receiveBuffer, 1);
-
     size_t count = 0;
     uint16_t error = 0;
+
+    ATOMIC_BLOCK_START
+    LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_4);
+
+    spiTransfer(transmitBuffer, receiveBuffer, 1);
 
     transmitBuffer[0] = 0x00;
     transmitBuffer[1] = 0x00;
@@ -188,10 +186,8 @@ int SPICoaxTransceiver::receive(uint16_t *buffer, const size_t bufferSize)
         count++;
     } while (count < bufferSize);
 
-    //digitalWrite(_csPin, HIGH);
     LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_4);
-
-    //SPI.endTransaction();
+    ATOMIC_BLOCK_END
 
     if (error != 0) {
         return (-1) * error;
