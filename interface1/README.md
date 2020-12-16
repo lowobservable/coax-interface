@@ -1,12 +1,14 @@
 # interface1
 
-A serial attached Arduino interface using the National Semiconductor DP8340 and DP8341.
+An Arduino Mega based interface using obsolete National Semiconductor DP8340 transmitter and DP8341 receiver ICs.
+
+See [interface2](../interface2]) for a modern interface using a Lattice iCE40 FPGA and STM32 microcontroller.
 
 ## Hardware
 
-You can find the Gerber files for fabricating a PCB in the [fabrication](hardware/fabrication) directory. I have used JLCPCB to make the PCBs.
-
 This interface requires an [Arduino Mega 2560 R3](https://store.arduino.cc/usa/mega-2560-r3).
+
+You can find the Gerber files for fabricating a PCB in the [fabrication](hardware/fabrication) directory. I have used JLCPCB to make the PCBs.
 
  Item | Quantity | Description                   | Reference  | Part Number                   | Source
 :----:|---------:|-------------------------------|------------|-------------------------------|----------------
