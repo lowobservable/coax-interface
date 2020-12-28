@@ -6,7 +6,7 @@ A modern USB connected interface using Lattice iCE40 FPGA and STM32 microcontrol
 
 ## Hardware
 
-You can find the Gerber files for fabricating a PCB in the [fabrication](hardware/fabrication) directory. I have used JLCPCB to make the PCBs.
+You can find the Gerber files for fabricating a PCB in the [fabrication](pcb/fabrication) directory. I have used JLCPCB to make the PCBs.
 
 ## FPGA
 
