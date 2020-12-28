@@ -17,7 +17,12 @@ An FPGA is used to handle the [3270 coax protocol](../protocol/protocol.md), it 
 The design targets the [Lattice iCE40 UltraPlus 5K](http://www.latticesemi.com/view_document?document_id=51968) device.
 
 * Everything, except for the SPI slave in `spi_device`, runs at a 38 MHz clock
-* `rx` is oversampled in `coax_rx`
 * The SPI slave runs at 80 Mhz in order to be able to run the SPI clock reliably at 10 Mhz
+* `rx` is oversampled in `coax_rx`
+* The `control` module exposes three registers to the microcontroller:
+    - status (read only)
+    - control
+    - device id (read only)
+- The `control` module also supports transmit and receive commands for writing to and reading the relevant FIFOs
 
 ## Firmware
